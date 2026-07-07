@@ -1,0 +1,3367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>인디팩토리 주식회사 v3.8 차트 기록 확대</title>
+<style>
+  :root{
+    --bg:#070b12;
+    --panel:#111827;
+    --panel2:#151f31;
+    --line:#263348;
+    --text:#eef4ff;
+    --muted:#8d9bb0;
+    --gold:#f6c95b;
+    --gold2:#f59e0b;
+    --green:#19c37d;
+    --red:#ff4d5d;
+    --blue:#4d8dff;
+    --cyan:#5eead4;
+    --shadow:0 18px 45px rgba(0,0,0,.38);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+  html,body{margin:0;width:100%;height:100%;background:radial-gradient(circle at top,#172033 0%,#070b12 55%,#03050a 100%);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);overflow:hidden;overscroll-behavior:none;position:fixed;inset:0;touch-action:manipulation}
+  button{font:inherit;color:inherit;border:0;cursor:pointer}
+  .app{width:100%;max-width:440px;height:100dvh;margin:0 auto;padding:8px 8px calc(72px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .topCard{background:linear-gradient(145deg,#0d1422,#121b2d);border:1px solid rgba(246,201,91,.18);border-radius:15px;padding:8px 11px;box-shadow:0 10px 26px rgba(0,0,0,.24);position:relative;overflow:hidden;min-height:46px}
+  .topCard:before{content:"";position:absolute;inset:-80px -65px auto auto;width:150px;height:150px;background:radial-gradient(circle,rgba(246,201,91,.18),transparent 66%);pointer-events:none}
+  .assetRow{display:flex;align-items:center;justify-content:flex-start;gap:10px;position:relative;z-index:1}
+  .assetLabel{margin-left:auto;color:#aeb8ca;font-size:12px;font-weight:900;letter-spacing:.2px;white-space:nowrap}.asset{font-size:25px;line-height:1;font-weight:1000;letter-spacing:-1px;color:#fff;text-shadow:0 0 18px rgba(246,201,91,.15);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+  .chartCard{background:rgba(13,20,34,.92);border:1px solid rgba(255,255,255,.08);border-radius:15px;padding:7px 7px 7px;box-shadow:0 10px 28px rgba(0,0,0,.28);min-height:158px}.chartHead{display:block;margin-bottom:5px}.chartPriceRow{display:flex;align-items:center;gap:8px;min-height:24px}.ticker{font-size:13px;color:#dbe6f7;font-weight:1000}.price{font-size:21px;font-weight:1000;letter-spacing:-.7px;display:flex;align-items:center;gap:4px}.priceArrow{font-size:13px;line-height:1;transform:translateY(-1px)}.change{margin-left:auto;font-size:12px;font-weight:950}.up{color:var(--red)}.down{color:var(--blue)}.flat{color:var(--muted)}.marketClock{--p:0;--clockColor:var(--green);width:25px;height:25px;border-radius:50%;position:relative;flex:0 0 25px;background:conic-gradient(var(--clockColor) calc(var(--p)*1%),rgba(255,255,255,.08) 0);box-shadow:inset 0 0 0 1px rgba(255,255,255,.11),0 0 12px rgba(25,195,125,.16);display:flex;align-items:center;justify-content:center}.marketClock:before{content:"";position:absolute;inset:4px;border-radius:50%;background:#0c1422;box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}.marketClock:after{content:"";position:absolute;left:50%;top:2px;width:3px;height:3px;margin-left:-1.5px;border-radius:50%;background:var(--clockColor);box-shadow:0 0 8px var(--clockColor);transform-origin:1.5px 10.5px;transform:rotate(calc(var(--p)*3.6deg));transition:transform .22s linear}.marketClock span{position:relative;z-index:1;font-size:8px;font-weight:1000;color:#eef4ff;letter-spacing:-.35px}.marketClock.closed{--clockColor:#8b95a5;box-shadow:inset 0 0 0 1px rgba(255,255,255,.11),0 0 12px rgba(139,149,165,.12)}
+  .marketLine{display:flex;justify-content:space-between;gap:8px;margin-top:1px;font-size:10px;color:var(--muted);line-height:1.25}.marketLine b{color:#fff}.chartBody{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px;align-items:stretch}.chartCanvasWrap{min-width:0}canvas{width:100%;height:128px;display:block;border-radius:12px;background:linear-gradient(180deg,#0b1220,#090d16);touch-action:none}
+  .orderPanel{background:rgba(17,24,39,.95);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:5px;display:block;min-width:0}.sideOrder{height:128px}.compactOrderRow{height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:30px 25px 25px 1fr 1fr;grid-template-areas:"reset reset" "step step" "ten hundred" "buy buy" "sell sell";gap:4px}.stepPair{grid-area:step;display:grid;grid-template-columns:1fr 1fr;gap:4px}.qtyBtn,.stepBtn,.orderResetBtn{background:#192437;border:1px solid rgba(255,255,255,.08);border-radius:9px;color:#cfd8e8;font-weight:950;font-size:11px;padding:0}.stepBtn{font-size:11px;border-radius:8px}.qtyBtn[data-add="10"]{grid-area:ten}.qtyBtn[data-add="100"]{grid-area:hundred}.orderResetBtn{grid-area:reset;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.02;color:#ffe2a2;background:#1b273a}.orderResetBtn b{font-size:13px;letter-spacing:-.3px}.orderResetBtn small{font-size:9px;color:#aeb8ca;margin-top:1px}.qtyBtn:active,.stepBtn:active,.orderResetBtn:active{transform:translateY(1px);filter:brightness(1.12)}
+  .tradeBtn{height:auto;border-radius:10px;font-size:12px;font-weight:1000;letter-spacing:-.1px}.tradeBtn:disabled{filter:grayscale(.75);opacity:.48}.buy{grid-area:buy;background:linear-gradient(145deg,#ff5b68,#9b182a);box-shadow:0 8px 20px rgba(255,77,93,.16)}.sell{grid-area:sell;background:linear-gradient(145deg,#5d9eff,#1b4fba);box-shadow:0 8px 20px rgba(77,141,255,.15)}.positionRow{display:none}.pos{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.055);border-radius:11px;padding:6px}.pos span{display:block;font-size:10px;color:var(--muted)}.pos b{display:block;font-size:12px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .touchArea{flex:1;min-height:0;background:linear-gradient(180deg,rgba(17,24,39,.94),rgba(9,13,22,.96));border:1px solid rgba(255,255,255,.08);border-radius:17px;padding:8px;display:flex;flex-direction:column;gap:7px;overflow:hidden;position:relative;touch-action:manipulation}.infoStrip{display:flex;justify-content:space-between;align-items:center;gap:8px}.tabTitle{font-weight:950;font-size:15px;white-space:nowrap}.livePost{min-width:0;flex:1;height:25px;display:flex;align-items:center;gap:6px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);font-size:11px;color:#d8e2f4;white-space:nowrap;overflow:hidden}.livePost span:last-child{overflow:hidden;text-overflow:ellipsis}.liveDot{width:6px;height:6px;border-radius:50%;background:#f6c95b;box-shadow:0 0 10px rgba(246,201,91,.7);flex:0 0 auto;animation:pulseDot 1.1s infinite}.livePost.upMood{border-color:rgba(255,77,93,.22);background:rgba(255,77,93,.075)}.livePost.downMood{border-color:rgba(77,141,255,.24);background:rgba(77,141,255,.075)}.livePost.angerMood{border-color:rgba(255,145,77,.26);background:rgba(255,145,77,.075)}.livePost.happyMood{border-color:rgba(246,201,91,.25);background:rgba(246,201,91,.075)}.mainTouch{flex:1;min-height:84px;border-radius:22px;background:linear-gradient(180deg,#192437,#111827 70%,#0b1220 100%);border:1px solid rgba(255,255,255,.09);color:#eef4ff;font-size:23px;font-weight:1000;box-shadow:inset 0 -7px 0 rgba(0,0,0,.28),0 14px 28px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;overflow:hidden;transform:translateY(0);transition:transform .05s ease}.mainTouch:active{transform:translateY(3px);box-shadow:inset 0 -3px 0 rgba(0,0,0,.28),0 8px 18px rgba(0,0,0,.24);filter:brightness(1.08)}.mainTouch small{font-size:12px;margin-top:4px;opacity:.78}.touchStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.chip{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:7px 6px}.chip span{display:block;color:var(--muted);font-size:10px}.chip b{display:block;font-size:12px;margin-top:2px}
+  .tabBox{display:none;flex:1;min-height:0;overflow:auto;padding-right:1px}.tabBox.active{display:block}#tab-home.active{display:flex;flex-direction:column;gap:7px;overflow:hidden;cursor:pointer}#tab-community.active{display:block;height:100%;overflow:hidden}.communityRefreshBtn{flex:0 0 39px}.actionCard{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:10px;margin-bottom:8px}.actionCard h3{margin:0 0 5px;font-size:14px}.actionCard p{margin:0 0 9px;color:#aab6c9;font-size:12px;line-height:1.45}.actionBtn{width:100%;height:39px;border-radius:12px;background:linear-gradient(135deg,#2d7dff,#154aa5);font-weight:950}.actionBtn.gold{background:linear-gradient(135deg,#f6c95b,#b97410);color:#201200}.actionBtn:disabled{filter:grayscale(1);opacity:.55}.factoryTop{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}.factoryMetric{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.065);border-radius:13px;padding:8px}.factoryMetric span{display:block;color:#8d9bb0;font-size:10px;font-weight:800}.factoryMetric b{display:block;margin-top:2px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.factoryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-bottom:7px}.factorySlot{min-height:88px;border-radius:14px;border:1px solid rgba(255,255,255,.075);background:linear-gradient(180deg,rgba(20,30,47,.92),rgba(11,17,28,.96));padding:7px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}.factorySlot.owned{border-color:rgba(94,234,212,.16);box-shadow:inset 0 0 0 1px rgba(94,234,212,.035)}.factorySlot.buyable{border-style:dashed;border-color:rgba(246,201,91,.32);background:linear-gradient(180deg,rgba(42,32,15,.52),rgba(17,24,39,.92))}.factorySlot.locked{opacity:.52;filter:grayscale(.35)}.factoryIcon{font-size:20px;line-height:1}.factoryName{font-size:11px;font-weight:1000;line-height:1.15;color:#edf4ff;word-break:keep-all}.factoryItem{font-size:9px;color:#aeb8ca;line-height:1.2}.factoryYield{font-size:10px;color:#ffe2a2;font-weight:950}.factoryBuy{width:100%;height:100%;background:transparent;color:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center}.factoryBuy .plusBox{font-size:22px;font-weight:1000;color:#f6c95b}.factoryBuy b{font-size:11px}.factoryBuy small{font-size:9px;color:#aeb8ca}.factoryBuy:disabled{opacity:.55}.factoryPulse{position:absolute;right:6px;top:6px;color:#f6c95b;font-size:10px;font-weight:1000;opacity:.95;animation:floatUp .7s ease-out forwards}.factoryLog{max-height:86px;overflow:hidden;display:flex;flex-direction:column;gap:4px}.factoryLogLine{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.055);border-radius:10px;padding:5px 7px;font-size:10px;color:#dbe6f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bottomNav{position:absolute;left:8px;right:8px;bottom:calc(7px + env(safe-area-inset-bottom));height:60px;max-width:424px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:rgba(7,11,18,.84);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px);border-radius:17px;padding:6px;box-shadow:0 -12px 35px rgba(0,0,0,.28)}.navBtn{border-radius:14px;background:transparent;color:#8f9bb0;font-size:10px;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.navBtn i{font-style:normal;font-size:9px;letter-spacing:.2px}.navBtn.active{background:rgba(246,201,91,.14);color:#ffe2a2;border:1px solid rgba(246,201,91,.22)}
+  .floatMoney{position:absolute;pointer-events:none;font-weight:1000;color:#fff8d8;text-shadow:0 2px 10px rgba(0,0,0,.45);animation:floatUp .75s ease-out forwards}.hint{position:absolute;top:8px;right:10px;font-size:10px;color:#6f7c91}.communityLayout{height:100%;display:flex;flex-direction:column;gap:8px;overflow:hidden}.communityCard{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:15px;padding:8px;margin-bottom:0;display:flex;flex-direction:column;flex:1;min-height:0}.communityHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.communityHead b{font-size:13px}.communityHead span{font-size:10px;color:#aeb8ca;white-space:nowrap}.communityFeed{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;max-height:none;overflow:auto;padding-right:2px;overscroll-behavior:contain}.comment{background:rgba(12,18,30,.86);border:1px solid rgba(255,255,255,.065);border-radius:12px;padding:7px 8px}.comment.upMood{border-color:rgba(255,77,93,.22);background:rgba(53,16,24,.75)}.comment.downMood{border-color:rgba(77,141,255,.23);background:rgba(15,26,52,.74)}.comment.angerMood{border-color:rgba(255,145,77,.24);background:rgba(54,27,15,.74)}.comment.happyMood{border-color:rgba(246,201,91,.22);background:rgba(47,38,16,.72)}.commentTop{display:flex;align-items:center;gap:6px;margin-bottom:3px}.commentNick{font-size:10px;font-weight:1000;color:#dbe6f7}.commentMode{margin-left:auto;font-size:9px;color:#8d9bb0}.comment p{margin:0;font-size:12px;line-height:1.32;color:#eef4ff}.dangerBtn{width:100%;height:40px;border-radius:12px;background:#451521;color:#ffc7d1;font-weight:900;border:1px solid rgba(255,91,110,.25)}.adminRemote{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:7px}.adminRemote.two{grid-template-columns:1fr 1fr}.adminBtn{min-height:38px;border-radius:12px;background:linear-gradient(145deg,#24324a,#151f31);border:1px solid rgba(255,255,255,.08);color:#dbe6f7;font-weight:950;font-size:11px;padding:6px}.adminBtn.gold{background:linear-gradient(135deg,#f6c95b,#b97410);color:#211403}.adminBtn.active{border-color:rgba(246,201,91,.45);box-shadow:0 0 0 1px rgba(246,201,91,.18) inset;color:#ffe2a2}.adminNote{font-size:10px;color:#8d9bb0;line-height:1.35;margin-top:7px}.adminSpeedInfo{font-size:12px;color:#ffe2a2;font-weight:950;margin-top:5px}
+  .factoryStage{font-size:9px;color:#ffe2a2;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.factoryProgress{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px}.factoryProgress i{display:block;height:100%;background:linear-gradient(90deg,#f6c95b,#5eead4);border-radius:999px}.factoryRisk{font-size:9px;color:#8d9bb0;line-height:1.2}.factorySlot.project{border-color:rgba(246,201,91,.20);background:linear-gradient(180deg,rgba(28,31,45,.95),rgba(10,17,30,.96))}.factorySlot.project.approval{border-color:rgba(94,234,212,.20)}.factorySlot.project.build{border-color:rgba(77,141,255,.22)}.factorySlot.project.trial{border-color:rgba(255,145,77,.22)}.factorySlot.failed{border-color:rgba(255,77,93,.2);background:linear-gradient(180deg,rgba(54,16,24,.7),rgba(14,17,27,.95))}
+
+  /* v2.8 개별 공장 관리 화면 */
+  .factoryDetail{background:linear-gradient(145deg,rgba(18,27,45,.98),rgba(9,14,25,.98));border:1px solid rgba(246,201,91,.18);border-radius:16px;padding:10px;margin-bottom:8px;box-shadow:0 12px 30px rgba(0,0,0,.24)}
+  .factoryDetailTop{display:flex;align-items:center;gap:9px;margin-bottom:8px}.factoryDetailIcon{width:38px;height:38px;border-radius:13px;background:rgba(246,201,91,.12);display:flex;align-items:center;justify-content:center;font-size:23px}.factoryDetailTitle{min-width:0;flex:1}.factoryDetailTitle b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.factoryDetailTitle span{display:block;font-size:10px;color:#aeb8ca;margin-top:2px}.factoryBackBtn{height:30px;padding:0 10px;border-radius:10px;background:#1a2537;border:1px solid rgba(255,255,255,.08);font-size:11px;font-weight:950;color:#dbe6f7}.factoryDetailStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}.factoryDetailStat{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:7px 6px}.factoryDetailStat span{display:block;font-size:9px;color:#8d9bb0}.factoryDetailStat b{display:block;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.factoryUpgradeGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.factoryUpgradeBtn{min-height:54px;border-radius:13px;background:linear-gradient(145deg,#24324a,#151f31);border:1px solid rgba(255,255,255,.08);padding:7px;text-align:left;font-weight:950}.factoryUpgradeBtn b{display:block;font-size:12px}.factoryUpgradeBtn span{display:block;font-size:10px;color:#aeb8ca;margin-top:3px}.factoryUpgradeBtn:disabled{opacity:.42;filter:grayscale(.8)}.factoryUpgradeBtn:active,.factoryBackBtn:active{transform:translateY(1px);filter:brightness(1.12)}.factorySlot.owned{cursor:pointer}.factoryOpenHint{grid-column:3/4;grid-row:3/4;text-align:right;font-size:9px;color:#f6c95b;font-weight:950}
+
+  @keyframes floatUp{0%{transform:translateY(0) scale(.9);opacity:0}15%{opacity:1}100%{transform:translateY(-48px) scale(1.1);opacity:0}}@keyframes pulseDot{0%,100%{transform:scale(1);opacity:.72}50%{transform:scale(1.55);opacity:1}}
+  @media (max-height:720px){.asset{font-size:22px}.topCard{min-height:42px;padding:7px 10px}.chartCard{min-height:143px}canvas{height:112px}.sideOrder{height:112px}.compactOrderRow{grid-template-rows:27px 22px 22px 1fr 1fr}.mainTouch{min-height:72px;font-size:20px}.bottomNav{height:56px}.tradeBtn{font-size:11px}}
+
+  /* v1.8 공장 페이지: 1열 장문 카드형 */
+  #tab-factory.active{overflow:auto;padding-right:0}
+  .factoryGrid{display:grid!important;grid-template-columns:1fr!important;gap:7px!important;padding-bottom:8px!important}
+  .factorySlot{min-height:76px!important;border-radius:15px!important;padding:9px 10px!important;display:grid!important;grid-template-columns:42px minmax(0,1fr) 96px!important;grid-template-rows:auto auto auto!important;align-items:center!important;gap:3px 8px!important}
+  .factorySlot .factoryIcon{grid-row:1/4;font-size:25px!important;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.055)}
+  .factorySlot .factoryName{grid-column:2/3;font-size:13px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .factorySlot .factoryItem{grid-column:2/3;font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#aeb8ca}
+  .factorySlot .factoryYield,.factorySlot .factoryStage{grid-column:3/4;grid-row:1/2;text-align:right;font-size:11px!important;color:#ffe2a2!important}
+  .factorySlot .factoryRisk{grid-column:3/4;grid-row:2/4;text-align:right;font-size:10px!important;color:#9fb0c6!important;line-height:1.35!important}
+  .factorySlot .factoryProgress{grid-column:2/3;grid-row:3/4;margin-top:2px!important;height:6px!important}
+  .factorySlot.buyable,.factorySlot.locked{display:block!important;padding:0!important;min-height:70px!important}
+  .factoryBuy{min-height:70px!important;height:100%!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;padding:0 13px!important;text-align:left!important}
+  .factoryBuy .plusBox{width:34px;height:34px;border-radius:11px;background:rgba(246,201,91,.13);display:flex;align-items:center;justify-content:center;font-size:23px!important}
+  .factoryBuy b{font-size:13px!important}.factoryBuy small{margin-left:auto;font-size:11px!important;color:#ffe2a2!important;font-weight:900}
+  .factoryPulse{right:9px!important;top:8px!important}
+  .factoryNewsToast{position:absolute;left:14px;right:14px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;min-height:42px;border-radius:15px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(145deg,rgba(14,22,36,.96),rgba(8,13,22,.96));box-shadow:0 18px 40px rgba(0,0,0,.42);display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;font-weight:950;line-height:1.35;opacity:0;transform:translateY(14px) scale(.98);pointer-events:none;transition:opacity .18s ease,transform .18s ease;color:#eef4ff;backdrop-filter:blur(12px)}
+  .factoryNewsToast.show{opacity:1;transform:translateY(0) scale(1)}
+  .factoryNewsToast.good{border-color:rgba(255,77,93,.32);background:linear-gradient(145deg,rgba(65,18,26,.96),rgba(16,20,32,.96))}
+  .factoryNewsToast.bad{border-color:rgba(77,141,255,.32);background:linear-gradient(145deg,rgba(22,38,76,.96),rgba(10,16,28,.96))}
+  .factoryNewsToast.info{border-color:rgba(94,234,212,.25)}
+
+  /* v3.3: 모바일 크롬에서 JS 타이머가 터치 전까지 둔해지는 경우를 줄이기 위한 숨은 CSS 심장박동 */
+  .enginePulse{
+    position:fixed;
+    left:0;
+    top:0;
+    width:2px;
+    height:2px;
+    opacity:.002;
+    pointer-events:none;
+    z-index:-1;
+    transform:translate3d(0,0,0);
+    animation:engineHeartbeat .18s linear infinite;
+  }
+  @keyframes engineHeartbeat{
+    0%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(1px,0,0) scale(1.01)}
+    100%{transform:translate3d(0,0,0) scale(1)}
+  }
+
+
+  .livePost{cursor:pointer}.livePost:active{transform:translateY(1px);filter:brightness(1.12)}
+  .factoryManageTabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0}.factoryManageTab{border-radius:12px;background:rgba(246,201,91,.10);border:1px solid rgba(246,201,91,.18);padding:7px 4px;text-align:center}.factoryManageTab b{display:block;font-size:11px}.factoryManageTab span{display:block;font-size:9px;color:#aeb8ca;margin-top:2px;line-height:1.25}.factorySectionTitle{font-size:11px;color:#ffe2a2;font-weight:1000;margin:8px 0 6px}
+</style>
+</head>
+<body>
+<div id="enginePulse" class="enginePulse" aria-hidden="true"></div>
+<div class="app">
+  <section class="topCard">
+    <div class="assetRow">
+      <div class="asset" id="assetText">₩ 0</div>
+      <div class="assetLabel">내 자산</div>
+    </div>
+  </section>
+
+  <section class="chartCard">
+    <div class="chartHead">
+      <div class="chartPriceRow">
+        <div class="ticker">주가</div>
+        <div class="marketClock open" id="marketClock" title="장시간"><span id="marketClockText">15</span></div>
+        <div class="price flat" id="priceWrap"><span class="priceArrow" id="priceArrow">◆</span><span id="priceText">₩0</span></div>
+        <div class="change flat" id="changeText">거래 없음</div>
+      </div>
+      <div class="marketLine">
+        <span>거래량 <b id="volumeText">0</b> · 투자심리 <b id="moodText">냉각</b></span>
+        <span>보유 <b id="sharesText">0주</b> · 수량 <b id="orderQtyText">1주</b></span>
+      </div>
+    </div>
+    <div class="chartBody">
+      <div class="chartCanvasWrap">
+        <canvas id="chart" width="800" height="260"></canvas>
+      </div>
+      <section class="orderPanel sideOrder">
+        <div class="compactOrderRow">
+          <button class="orderResetBtn" id="orderResetBtn"><b id="orderResetQty">1</b><small>주문/초기화</small></button>
+          <div class="stepPair">
+            <button class="stepBtn" data-add="1">+1</button>
+            <button class="stepBtn" data-add="-1">-1</button>
+          </div>
+          <button class="qtyBtn" data-add="10">+10</button>
+          <button class="qtyBtn" data-add="100">+100</button>
+          <button class="tradeBtn buy" id="buyBtn">매수</button>
+          <button class="tradeBtn sell" id="sellBtn">매도</button>
+        </div>
+        <div class="positionRow">
+          <div class="pos"><span>평단가</span><b id="avgText">₩0</b></div>
+          <div class="pos"><span>평가손익</span><b id="pnlText">₩0</b></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="touchArea" id="contentArea">
+    <div class="infoStrip">
+      <div class="tabTitle" id="tabTitle">영업 / 생산 터치</div>
+      <div class="livePost" id="homeLivePost">
+        <span class="liveDot"></span>
+        <span id="homeLiveText">실시간 종목토론 대기 중</span>
+      </div>
+    </div>
+
+    <div class="tabBox active" id="tab-home">
+      <button class="mainTouch" id="touchBtn">
+        영업 터치
+        <small>터치하면 거래량과 관심도가 올라갑니다</small>
+      </button>
+      <div class="touchStats">
+        <div class="chip"><span>터치수익</span><b id="tapIncomeText">₩1</b></div>
+        <div class="chip"><span>영업열기</span><b id="todayVolText">0</b></div>
+        <div class="chip"><span>시장상태</span><b id="buyerText">조용함</b></div>
+      </div>
+    </div>
+
+    <div class="tabBox" id="tab-factory">
+      <div class="factoryTop">
+        <div class="factoryMetric"><span>가동 공장</span><b id="factoryCountText">0 / 12칸</b></div>
+        <div class="factoryMetric"><span>장 상태</span><b id="marketDayText">DAY 1 · 장중</b></div>
+      </div>
+      <div class="factoryGrid" id="factoryGrid"></div>
+      <div class="actionCard">
+        <h3>공장 생산 로그</h3>
+        <p>공장은 계획 검토, 이사회 승인, 자금 조달, 건설, 시운전을 거쳐 가동됩니다. 가동 후에는 개별 공장 화면에서 근로자와 생산라인을 업그레이드할 수 있습니다.</p>
+        <div class="factoryLog" id="factoryLog"></div>
+      </div>
+    </div>
+
+    <div class="tabBox" id="tab-rnd">
+      <div class="actionCard">
+        <h3>생산기술 개발</h3>
+        <p>터치 수익과 생산 효율을 올립니다. 연구 발표도 주가에 작게 반영됩니다.</p>
+        <button class="actionBtn" id="rndBtn">연구 개발 ₩300</button>
+      </div>
+      <div class="actionCard"><h3>개발 레벨</h3><p id="rndInfo">R&D 0단계. 아직 수작업 중심입니다.</p></div>
+    </div>
+
+    <div class="tabBox" id="tab-stock">
+      <div class="actionCard">
+        <h3>주식 설명</h3>
+        <p>터치와 공장 투자로 거래량이 생기고, 매수세가 붙으면 캔들이 움직입니다. 내 회사 주식은 상단 잔고에서 현금이 빠지고 들어오는 구조입니다.</p>
+      </div>
+      <div class="actionCard"><h3>시장 단계</h3><p id="stockInfo">거래량을 만들면 작은 매수자가 등장합니다.</p></div>
+    </div>
+
+    <div class="tabBox" id="tab-future">
+      <div class="actionCard">
+        <h3>빈 페이지</h3>
+        <p>추후 새로운 기능을 넣을 공간입니다.</p>
+      </div>
+    </div>
+
+    <div class="tabBox" id="tab-community">
+      <div class="communityLayout">
+        <div class="communityCard">
+          <div class="communityHead">
+            <b>실시간 종목토론방</b>
+            <span id="communityMood">거래 없음</span>
+          </div>
+          <div class="communityFeed" id="communityFeed"></div>
+        </div>
+        <button class="actionBtn communityRefreshBtn" id="commentRefreshBtn">댓글 새로 만들기</button>
+      </div>
+    </div>
+
+    <div class="tabBox" id="tab-setting">
+      <div class="actionCard">
+        <h3>관리자용 리모컨</h3>
+        <p>테스트용 기능입니다. 진행 속도를 빠르게 하거나 자금을 지급해서 공장/주가 반응을 빠르게 확인할 수 있습니다.</p>
+        <div class="adminSpeedInfo" id="adminSpeedInfo">진행속도 x1</div>
+        <div class="adminRemote">
+          <button class="adminBtn" id="adminSpeed1Btn">x1</button>
+          <button class="adminBtn" id="adminSpeed5Btn">x5</button>
+          <button class="adminBtn" id="adminSpeed20Btn">x20</button>
+        </div>
+        <div class="adminRemote two">
+          <button class="adminBtn" id="adminDayBtn">1일 진행</button>
+          <button class="adminBtn" id="adminTenDayBtn">10일 진행</button>
+        </div>
+        <button class="adminBtn gold" id="adminMoneyBtn" style="width:100%;margin-top:6px">₩ 10,000,000 지급</button>
+        <div class="adminNote">※ 출시용으로 빌드할 때는 이 리모컨을 숨기거나 제거하면 됩니다.</div>
+      </div>
+      <div class="actionCard">
+        <h3>저장</h3>
+        <p>진행 상황은 이 브라우저에 자동 저장됩니다.</p>
+        <button class="dangerBtn" id="resetBtn">게임 초기화</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="bottomNav">
+    <button class="navBtn active" data-tab="home"><i>HOME</i>홈</button>
+    <button class="navBtn" data-tab="factory"><i>FAC</i>공장</button>
+    <button class="navBtn" data-tab="rnd"><i>R&D</i>개발</button>
+    <button class="navBtn" data-tab="stock"><i>STK</i>주식</button>
+    <button class="navBtn" data-tab="future"><i>NEW</i>빈칸</button>
+    <button class="navBtn" data-tab="setting"><i>SET</i>관리</button>
+  </nav>
+  <div class="factoryNewsToast" id="factoryNewsToast"></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  /*
+    인디팩토리 정리판 v3.9
+    - 한 파일 유지: 휴대폰에서 바로 실행 가능
+    - 내부 구역: 상태/댓글/공장/시장/캔들/UI/이벤트/저장
+    - 시장 엔진은 marketEngineBeat() 하나로 모아 중복 타이머 충돌을 줄임
+  */
+  const GAME_VERSION = '3.9';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => '₩' + Math.floor(n).toLocaleString('ko-KR');
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+
+  const defaultState = {
+    cash: 0,
+    price: 0,
+    prevClose: 0,
+    volume: 0,
+    todayVolume: 0,
+    interest: 0,
+    revenue: 0,
+    companyValue: 0,
+    overheat: 0,
+    shares: 0,
+    avgPrice: 0,
+    qty: 1,
+    tapBase: 1,
+    factoryLevel: 0,
+    factories: [],
+    factoryLog: [],
+    factorySeq: 0,
+    selectedFactoryId: null,
+    gameDay: 1,
+    dayStartedAt: Date.now(),
+    lastFactoryDayProcessed: 0,
+    afterMarketTouches: 0,
+    overnightHeat: 0,
+    pendingOpeningVolume: 0,
+    openingGapAppliedDay: 0,
+    lastOpeningGap: 0,
+    rndLevel: 0,
+    sentiment: 0,
+    eventHeat: 0,
+    touchHeat: 0,
+    buyPressure: 0,
+    idlePressure: 0,
+    touchTimes: [],
+    lastTouchAt: 0,
+    touchPeak: 0,
+    marketAttention: 0,
+    externalBuyPressure: 0,
+    externalSellPressure: 0,
+    externalVolumeHeat: 0,
+    lastExternalUpdateAt: Date.now(),
+    buyerTier: 0,
+    candles: [],
+    comments: [],
+    lastAction: '',
+    lastCommentAt: 0,
+    activeCandle: null,
+    candleStartedAt: Date.now(),
+    tick: 0,
+    lastSave: Date.now(),
+    lastSavedAt: Date.now(),
+    offlineRewardCapMs: 3 * 60 * 60 * 1000,
+    lastOfflineSummary: '',
+    adminSpeed: 1
+  };
+
+  let state = load();
+  if(!Array.isArray(state.comments)) state.comments = [];
+  if(!Array.isArray(state.factories)) state.factories = [];
+  if(!Array.isArray(state.factoryLog)) state.factoryLog = [];
+  if(!Array.isArray(state.touchTimes)) state.touchTimes = [];
+  if(!Number.isFinite(state.touchHeat)) state.touchHeat = 0;
+  if(!Number.isFinite(state.buyPressure)) state.buyPressure = 0;
+  if(!Number.isFinite(state.idlePressure)) state.idlePressure = 0;
+  if(!Number.isFinite(state.lastTouchAt)) state.lastTouchAt = 0;
+  if(!Number.isFinite(state.touchPeak)) state.touchPeak = 0;
+  if(!Number.isFinite(state.marketAttention)) state.marketAttention = 0;
+  if(!Number.isFinite(state.externalBuyPressure)) state.externalBuyPressure = 0;
+  if(!Number.isFinite(state.externalSellPressure)) state.externalSellPressure = 0;
+  if(!Number.isFinite(state.externalVolumeHeat)) state.externalVolumeHeat = 0;
+  if(!Number.isFinite(state.lastExternalUpdateAt)) state.lastExternalUpdateAt = Date.now();
+  if(!Number.isFinite(state.adminSpeed)) state.adminSpeed = 1;
+  state.adminSpeed = clamp(Number(state.adminSpeed)||1, 1, 20);
+  if(!Number.isFinite(state.factorySeq)) state.factorySeq = 0;
+  if(state.selectedFactoryId !== null && !Number.isFinite(Number(state.selectedFactoryId))) state.selectedFactoryId = null;
+  if(!Number.isFinite(state.lastCommentAt)) state.lastCommentAt = 0;
+  if(!Number.isFinite(state.revenue)) state.revenue = 0;
+  if(!Number.isFinite(state.companyValue)) state.companyValue = Math.max(0, state.interest * 8 + state.factoryLevel * 120);
+  if(!Number.isFinite(state.overheat)) state.overheat = 0;
+  if(!Number.isFinite(state.candleStartedAt)) state.candleStartedAt = Date.now();
+  if(!Number.isFinite(state.gameDay) || state.gameDay < 1) state.gameDay = 1;
+  if(!Number.isFinite(state.dayStartedAt) || state.dayStartedAt <= 0) state.dayStartedAt = Date.now();
+  if(!Number.isFinite(state.lastFactoryDayProcessed)) state.lastFactoryDayProcessed = 0;
+  if(!Number.isFinite(state.afterMarketTouches)) state.afterMarketTouches = 0;
+  if(!Number.isFinite(state.overnightHeat)) state.overnightHeat = 0;
+  if(!Number.isFinite(state.pendingOpeningVolume)) state.pendingOpeningVolume = 0;
+  if(!Number.isFinite(state.openingGapAppliedDay)) state.openingGapAppliedDay = 0;
+  if(!Number.isFinite(state.lastOpeningGap)) state.lastOpeningGap = 0;
+  if(!Number.isFinite(state.lastSavedAt)) state.lastSavedAt = Number(state.lastSave) || Date.now();
+  if(!Number.isFinite(state.offlineRewardCapMs)) state.offlineRewardCapMs = 3 * 60 * 60 * 1000;
+  if(typeof state.lastOfflineSummary !== 'string') state.lastOfflineSummary = '';
+  let activeTab = 'home';
+  let lastPressureUpdateAt = Date.now();
+  let factoryToastTimer = null;
+  let offlineRunning = false;
+  let lastFactoryBuyTap = 0;
+  let offlineSummaryToShow = '';
+
+
+  // ===== 커뮤니티 댓글 재료 =====
+  const commentParts = {
+    거래없음: {
+      intros: ['조용합니다.', '아직 시작 전.', '대기 중.'],
+      subjects: ['인디팩토리', '이 회사', '여기', '오늘 차트', '주가', '호가창'],
+      reactions: ['아직 조용하네요', '거래 붙으면 볼만할 듯', '초기 종목 느낌이네요', '첫 거래 기다리는 중', '누가 먼저 사나 보는 중', '시동 걸리기 전 같네요'],
+      endings: ['관망합니다', '일단 지켜봅니다', '슬슬 시작인가요?', '조용할 때가 기회죠', '첫 캔들 기대합니다', '거래량만 붙으면 재밌겠네요']
+    },
+    초기관심: {
+      lines: [
+        '이 주식 뭐야? 이름은 귀여운데 거래량이 없네',
+        '사장 누구인데요? 인디팩토리 처음 봅니다',
+        '여기 상장한 지 얼마 안 된 회사인가요?',
+        '공장주라는데 뭘 만드는 회사죠?',
+        '이 회사 재무제표 어디서 봐요?',
+        '주가 0원 시작이면 지금 내가 첫 주주 되는 건가요?',
+        '이거 작전주 아니고 진짜 제조업 맞나요?',
+        '호가창 너무 조용해서 무섭네요',
+        '첫 거래 누가 찍을지 구경 중입니다',
+        '여기 대표가 직접 영업 뛴다던데 사실인가요?',
+        '공장 하나 지으면 바로 실적 나오는 구조인가요?',
+        '신생 제조주라 그런지 정보가 너무 없네요',
+        '이 종목 커뮤니티 왜 이렇게 조용해요?',
+        '혹시 인디팩토리 아시는 분 설명 좀요',
+        '오늘 처음 봤는데 뭔가 냄새납니다',
+        '거래량만 붙으면 재밌을 것 같은데요',
+        '초기 주주 모집 중인가요? 분위기 보러 왔습니다',
+        '사장이 현장에서 직접 만드는 회사라던데요',
+        '공장 완공 뉴스 나오면 움직이나요?',
+        '여기 아직 아무도 관심 없는 게 오히려 기회일까요?',
+        '처음 보는 종목인데 회사 설명 어디 있나요?',
+        '대표 이름이 인디인가요? 닉네임인가요?',
+        '제조업이면 매출은 언제부터 찍히나요?',
+        '이 회사 공장 실제로 짓는 중인가요?',
+        '아직 뉴스도 별로 없는데 왜 사람들이 모이죠?',
+        '초기 종목은 정보 찾는 맛이 있네요',
+        '여기 상장 첫날 분위기 같은데 맞나요?',
+        '주주총회 하면 대표 얼굴 볼 수 있나요?',
+        '이거 공장 승인 나면 재료 되는 건가요?',
+        '거래량 없을 때 들어가는 게 맞나요 기다리는 게 맞나요?',
+        '아직 이름만 보고 들어왔습니다 설명 좀요',
+        '뭔 회사인지 모르겠는데 게시판은 재밌네요',
+        '초기라 그런가 호가창이 텅 비어 있네요',
+        '공장 계획 발표하면 바로 움직이나요?',
+        '소액으로 구경해볼까 고민 중입니다',
+        '이 회사 제품이 단순 부품부터 시작한다던데요?',
+        '대표가 영업 터치하면 주가 움직인다는 게 무슨 말이죠?',
+        '누가 이 종목 처음 발견했나요?',
+        '아직 차트도 짧아서 판단이 어렵네요',
+        '신규주 느낌이라 일단 즐겨찾기만 해둡니다',
+        '여기 고인물 있나요? 설명 부탁드립니다',
+        '공장 짓는 게임 같은 종목이라 신기하네요',
+        '시총이 너무 작아서 한 명만 사도 움직이나요?',
+        '이 회사 장기 목표가 뭔가요?',
+        '주가보다 회사 소개가 더 궁금합니다',
+        '초반에 이런 조용한 종목 찾는 재미가 있죠',
+        '공장 완공까지 기다리는 종목인가요?',
+        '이 종목 오늘 처음 알았습니다',
+        '차트 기록 30개도 안 되는 완전 신생주네요'
+      ],
+      intros: ['궁금.', '초기 종목.', '정보 좀.', '처음 봄.'],
+      subjects: ['이 주식', '인디팩토리', '이 회사', '공장주', '대표', '초기 거래'],
+      reactions: ['정체가 궁금하네요', '정보가 별로 없네요', '슬슬 알아봐야겠네요', '초반 냄새가 나네요', '아직 조용하네요'],
+      endings: ['아시는 분?', '설명 부탁합니다', '일단 관망합니다', '재밌어 보입니다', '첫 거래 기다립니다']
+    },
+    잡담: {
+      lines: [
+        '다들 점심은 먹고 매매하세요',
+        '커피 한 잔 마시고 차트 봐야겠습니다',
+        '오늘 장 너무 조용해서 졸리네요',
+        '공장 돌아가는 소리 들리면 깨워주세요',
+        '월급날까지 버티는 중입니다',
+        '저는 오늘 손 안 대고 구경만 합니다',
+        '사장님 야근하면 주가 오르나요?',
+        '점심 메뉴 추천 좀요 차트보다 더 어렵네요',
+        '댓글창이 조용하니까 더 수상합니다',
+        '오늘은 무리하지 말고 물도 드세요',
+        '이 종목 보다가 라면 물 끓인 거 까먹었습니다',
+        '차트가 조용하면 고양이 사진이나 봐야죠',
+        '퇴근 전까지 빨간불 한 번만 보고 싶네요',
+        '공장주 투자자는 멘탈도 가공해야 합니다',
+        '호가창보다 제 통장이 더 조용합니다',
+        '다들 성급하게 몰빵하지 말고 천천히 갑시다',
+        '오늘 장 끝나고 치킨 가능할까요?',
+        '초보입니다. 그냥 구경해도 되나요?',
+        '거래량 없을 때 게시판 잡담이 제일 재밌습니다',
+        '대표님 커피 드시고 영업 한 번 더 뛰어주세요',
+        '아침부터 차트 보니까 시간이 빨리 가네요',
+        '오늘은 매매보다 구경이 더 재밌습니다',
+        '점심 뭐 먹을지 정하고 다시 오겠습니다',
+        '장 시작했는데 다들 출근은 하셨나요',
+        '이런 조용한 게시판이 은근 편합니다',
+        '커피 식기 전에 빨간 캔들 하나만 보고 싶네요',
+        '초반 종목이라 댓글창도 신입 느낌이네요',
+        '다들 손가락 스트레칭하고 터치하세요',
+        '오늘 업무보다 호가창이 더 궁금합니다',
+        '저는 일단 물 마시고 오겠습니다',
+        '댓글 읽다 보니 매수 버튼보다 배고픔이 먼저 옵니다',
+        '초반엔 급하게 하지 말고 분위기나 보죠',
+        '주식도 좋지만 점심시간은 지켜야죠',
+        '차트가 짧아서 일기장 보는 느낌입니다',
+        '대표님 야근하지 말고 밥부터 드세요',
+        '게시판이 조용해서 라디오 틀어놓은 기분입니다',
+        '오늘은 관망하면서 간식이나 먹겠습니다',
+        '초보자도 들어와도 되는 방인가요',
+        '이 종목보다 제 점심 메뉴가 더 변동성 큽니다',
+        '다들 무리하지 말고 천천히 봅시다',
+        '초반이라 그런지 댓글도 탐색전이네요',
+        '장마감 전에 화장실 다녀오세요',
+        '매매보다 회사 구경하러 들어왔습니다',
+        '차트 보고 있다가 점심시간 놓쳤습니다',
+        '오늘은 대표님 응원만 하고 갑니다',
+        '공장 소식 기다리면서 커피 마십니다',
+        '처음 온 사람들 많네요 반갑습니다',
+        '이런 초창기 게시판 분위기 좋습니다',
+        '다들 처음이라 어리둥절한 게 웃기네요'
+      ],
+      intros: ['잡담.', '쉬어갑시다.', '잠깐.', '휴식.'],
+      subjects: ['게시판', '개미들', '오늘 장', '차트', '호가창', '점심시간'],
+      reactions: ['너무 조용하네요', '커피가 필요합니다', '천천히 봅시다', '멘탈 관리합시다', '기다림도 투자죠'],
+      endings: ['다들 밥 챙기세요', '무리하지 마세요', '관망합니다', '화이팅입니다', '좋은 하루 되세요']
+    },
+    상승: {
+      lines: [
+              "와씨 슬슬 올라갑니다",
+              "아싸 빨간불 들어왔네요",
+              "좋다 좋아 이 흐름 기다렸습니다",
+              "드디어 시장이 알아보네요",
+              "어라 힘 붙는데요?",
+              "이제야 시동 거는 느낌입니다",
+              "캔들이 예쁘게 서네요",
+              "조용히 우상향하는 게 더 무섭습니다",
+              "오 이건 매수세 살아났습니다",
+              "와 분위기 확 바뀌네요",
+              "슬금슬금 올라가는 맛 좋네요",
+              "이 정도면 희망 생깁니다",
+              "평단 근처까지 왔습니다 조금만 더",
+              "이제 게시판도 따뜻해지겠네요",
+              "힘 모으더니 결국 위로 가네요",
+              "아까 산 사람들 웃고 있겠네요",
+              "이 흐름 유지하면 재밌습니다",
+              "오늘 빨간 캔들 보기 좋네요",
+              "오랜만에 숨통 트입니다",
+              "천천히 가도 좋으니 위로만 가자"
+      ],
+      intros: ['오?', '슬슬?', '좋은데요.', '분위기 바뀜.'],
+      subjects: ['이 종목', '인디팩토리', '오늘 캔들', '주가', '매수세', '호가창'],
+      reactions: ['위로 꿈틀대네요', '빨간불 들어왔네요', '매수세 붙는 중', '조용히 올라가네요', '힘 받는 느낌입니다', '바닥 찍은 건가요'],
+      endings: ['기분 좋네요', '조금만 더 갑시다', '차트 살아납니다', '기대해봅니다', '손이 근질근질', '분위기 좋습니다']
+    },
+    하락: {
+      lines: [
+              "아씨 또 밀리네요",
+              "아 이 흐름은 좀 불안합니다",
+              "파란불 보니까 기분 확 식네요",
+              "조심해야 할 자리 같습니다",
+              "힘이 너무 없습니다",
+              "올라가나 했더니 바로 꺾이네요",
+              "매도세가 은근히 계속 나옵니다",
+              "아까 산 사람들 멘탈 괜찮나요",
+              "이건 잠깐 쉬어가야겠는데요",
+              "지지선이 있는지 봐야겠습니다",
+              "계속 질질 흐르는 게 제일 싫습니다",
+              "오늘은 욕심내면 안 되겠네요",
+              "매수 버튼 누르려다 멈췄습니다",
+              "내려갈 땐 왜 이렇게 빠른가요",
+              "아직 바닥 확인 안 된 것 같습니다",
+              "이러다 또 물리는 패턴인데요",
+              "조용히 빠지는 게 더 무섭습니다",
+              "분위기가 갑자기 차가워졌습니다",
+              "누가 계속 눌러버리네요",
+              "아씨 수익권 멀어집니다"
+      ],
+      intros: ['아...', '음...', '조심.', '흐름 꺾임.'],
+      subjects: ['이 종목', '인디팩토리', '오늘 캔들', '주가', '매도세', '호가창'],
+      reactions: ['아래로 밀리네요', '파란불 켜졌네요', '매도세가 나오네요', '힘이 빠졌네요', '단기 조정인가요', '분위기 싸해졌네요'],
+      endings: ['일단 조심합니다', '버틸까요?', '손절 고민됩니다', '추매 타이밍인가요', '숨 좀 고르죠', '아프네요']
+    },
+    급등: {
+      lines: [
+              "와씨 이거 뭐죠 갑자기 쏩니다",
+              "아싸 불기둥 나왔습니다",
+              "미쳤다 거래량 터졌네요",
+              "이건 진짜 뉴스 있는 거 아닌가요",
+              "와 호가창이 빨려 들어갑니다",
+              "방금 본 사람들 다 놀랐겠는데요",
+              "이거 놓친 사람 손 떨립니다",
+              "오늘의 주인공 여기인가요",
+              "갑자기 분위기 축제네요",
+              "와씨 심장 뛰네요",
+              "빨간 캔들이 화면 찢습니다",
+              "이 맛에 종목토론방 봅니다",
+              "큰손 들어온 거 맞는 듯합니다",
+              "이건 그냥 광기입니다",
+              "아싸 계좌가 살아납니다",
+              "지금 들어가도 되나요 늦었나요",
+              "상승 속도 미쳤습니다",
+              "방금까지 조용했던 종목 맞나요",
+              "게시판 불났습니다",
+              "오늘 치킨각 나왔나요"
+      ],
+      intros: ['와!', '대박.', '불기둥!', '미쳤다.', '이게 뭐죠?'],
+      subjects: ['이 종목', '인디팩토리', '오늘 차트', '주가', '공장주', '호가창'],
+      reactions: ['불기둥이네요', '미쳤네요', '매수세 붙었네요', '큰손 들어온 듯', '위로 쏘네요', '거래량 터졌네요', '상한가 냄새납니다', '개미들 몰리네요'],
+      endings: ['ㄷㄷ', '가나요?', '지금 타도 되나요?', '상장각인가요?', '늦었나요?', '오늘 잠 못 잡니다', '이 맛에 합니다', '심장 뜁니다']
+    },
+    폭락: {
+      lines: [
+              "아씨 이건 좀 심한데요",
+              "와 파란 폭포수 나왔습니다",
+              "그지같네 방금 들어갔는데",
+              "멘탈 터집니다 진짜",
+              "아니 왜 갑자기 던지나요",
+              "구조대 언제 옵니까",
+              "호가창이 비어버렸습니다",
+              "손절 버튼이 눈에 아른거립니다",
+              "아까 좋다던 사람 어디 갔나요",
+              "이건 악재 냄새 납니다",
+              "순식간에 분위기 장례식입니다",
+              "내 계좌가 공장 불량품 됐습니다",
+              "살려주세요 너무 빠릅니다",
+              "고점에서 잡은 사람들 어떡합니까",
+              "와 이건 눈물 납니다",
+              "갑자기 차트가 절벽입니다",
+              "이거 지하실 더 있나요",
+              "진짜 그지같이 빠지네요",
+              "오늘은 밥맛 사라졌습니다",
+              "손이 얼어서 아무것도 못 누르겠습니다"
+      ],
+      intros: ['헉.', '아니...', '큰일.', '파랗다.', '살려주세요.'],
+      subjects: ['이 종목', '인디팩토리', '주가', '오늘 차트', '여기', '내 계좌'],
+      reactions: ['위험하네요', '세력 빠진 듯', '지하실 가나요', '매도 압박 심하네요', '흐름 꺾였네요', '폭포수네요', '호가가 비네요', '멘탈 나갑니다'],
+      endings: ['손절해야 하나요', '망했습니다', '구조대 언제 오나요', '조심하세요', '물렸습니다', '눈물 납니다', '이건 너무 아픈데요', '오늘 밥맛 없네요']
+    },
+    대량매수: {
+      lines: [
+              "누가 계속 긁어갑니다",
+              "큰손 들어온 느낌 강합니다",
+              "물량 나오는 족족 받아먹네요",
+              "매수벽 생기는 거 보세요",
+              "거래량이 평소랑 다릅니다",
+              "이건 단순 개미 매수 아닌 것 같습니다",
+              "누가 조용히 담는 중입니다",
+              "호가를 위로 밀어버리네요",
+              "매집 냄새 진하게 납니다",
+              "이 정도면 뭔가 알고 사는 듯합니다",
+              "대량매수 뜨면 게시판부터 뜨거워집니다",
+              "매수세가 꺾이지 않습니다",
+              "와씨 물량 흡수력 뭐죠",
+              "누가 공장 뉴스 먼저 들었나요",
+              "큰돈이 들어오면 차트가 달라집니다",
+              "사려는 사람이 계속 늘어납니다",
+              "이건 매수 버튼 누르게 만드는 흐름입니다",
+              "호가창이 빨개지고 있습니다",
+              "갑자기 관심종목 된 느낌입니다",
+              "거래량이 말해주네요"
+      ],
+      intros: ['수상함.', '큰손 냄새.', '누가 들어옴.', '거래량 봐요.'],
+      subjects: ['누가', '큰손이', '세력이', '개미들이', '매수봇이', '기관 냄새가'],
+      reactions: ['계속 사네요', '긁어가네요', '매집 중인 듯', '호가를 들어올리네요', '물량 흡수하네요', '조용히 담네요', '던지는 족족 받아먹네요'],
+      endings: ['ㄷㄷ', '수상합니다', '냄새납니다', '뭔가 있나요?', '거래량 보세요', '뉴스 나오나요?', '이건 그냥 못 넘깁니다']
+    },
+    대량매도: {
+      lines: [
+              "누가 크게 던졌습니다",
+              "물량 폭탄 나왔네요",
+              "큰손이 빠지는 느낌입니다",
+              "호가를 찍어누릅니다",
+              "매도벽 보니까 숨 막힙니다",
+              "이건 차익실현 세게 나왔습니다",
+              "아씨 누가 계속 팝니까",
+              "매수세가 받아내질 못하네요",
+              "고점 매도 물량인가요",
+              "던지는 양이 장난 아닙니다",
+              "매도세 나오면 게시판 바로 싸해지네요",
+              "물량이 쏟아져서 정신 없습니다",
+              "이거 단기 고점 신호인가요",
+              "누가 공장 뉴스 팔아먹었나요",
+              "매수하려다 손 뗐습니다",
+              "파란 물량이 계속 내려옵니다",
+              "호가창이 무너지는 느낌입니다",
+              "아까 산 사람들 다 얼었겠네요",
+              "이건 조심해야 됩니다",
+              "진짜 왜 나만 사면 던지죠"
+      ],
+      intros: ['매도 터짐.', '조심.', '누가 던짐.', '물량주의.'],
+      subjects: ['누가', '세력이', '큰손이', '단타들이', '고래가', '익절러들이'],
+      reactions: ['던졌네요', '빠져나간 듯', '고점 매도했네요', '물량 쏟네요', '차익실현하네요', '호가를 찍어누르네요', '계속 팔아버리네요'],
+      endings: ['조심하세요', '작전인가요', '물렸습니다', '아직 끝난 건가요?', '무섭네요', '왜 나만 사면 이러죠', '숨 막힙니다']
+    },
+    기쁨: {
+      lines: [
+              "아싸 드디어 수익권입니다",
+              "와씨 이 맛에 버팁니다",
+              "계좌가 웃고 있습니다",
+              "평단 위로 올라왔습니다 살았습니다",
+              "오늘은 대표님 믿었습니다",
+              "기분 좋아서 커피 한 잔 더 갑니다",
+              "드디어 보상 받는 느낌입니다",
+              "이제 웃으면서 차트 봅니다",
+              "나이스 빨간불 최고입니다",
+              "아 오늘 하루 기분 좋습니다",
+              "치킨각 살짝 보입니다",
+              "오랜 기다림 끝에 웃습니다",
+              "주가 오르니까 게시판도 따뜻합니다",
+              "이 흐름이면 퇴근길이 즐겁겠네요",
+              "아싸 공장 돌아갑니다",
+              "힘든 시간 버틴 보람 있습니다",
+              "오늘은 제가 이긴 것 같습니다",
+              "빨간 캔들 하나에 기분이 달라지네요",
+              "대표님 일 잘하시네요",
+              "이대로만 가면 좋겠습니다"
+      ],
+      intros: ['나이스!', '좋았다!', '살았다!', '행복합니다.', '드디어!'],
+      subjects: ['내 평단', '인디팩토리', '이 종목', '오늘 수익', '계좌', '캔들'],
+      reactions: ['수익권 왔네요', '빨간맛 좋네요', '기분 좋게 올라갑니다', '계좌가 웃네요', '드디어 보답하네요', '이 흐름 너무 좋습니다'],
+      endings: ['치킨각입니다', '퇴근하고 웃겠습니다', '더 가봅시다', '오늘은 제가 이겼습니다', '기분 최고네요', '이게 주식이지']
+    },
+    분노: {
+      lines: [
+              "아씨 진짜 뭐 하는 겁니까",
+              "그지같네 또 당했습니다",
+              "왜 내가 사면 바로 빠지죠",
+              "대표님 일 안 합니까",
+              "이사회 뭐 하는데요",
+              "호가창 장난치는 것 같습니다",
+              "공장 뉴스 믿고 샀는데 이게 뭔가요",
+              "아 진짜 열받네요",
+              "손절하려니 또 아깝고 미치겠습니다",
+              "내 계좌 불량품 됐습니다",
+              "이건 너무한 흐름입니다",
+              "왜 좋은 뉴스 뒤에 바로 던지나요",
+              "주주들 멘탈 생각 좀 해주세요",
+              "아까 환호한 내가 바보였습니다",
+              "이 종목 사람 미치게 하네요",
+              "진짜 공장 문 닫았나요",
+              "누가 계속 장난치는 느낌입니다",
+              "오늘은 차트 보기 싫습니다",
+              "아씨 손이 떨립니다",
+              "이러면 신뢰가 깨집니다"
+      ],
+      intros: ['아 진짜.', '하...', '왜 이러죠.', '열받네요.', '못 참겠다.'],
+      subjects: ['이 종목', '내 계좌', '인디팩토리', '매도세', '호가창', '차트'],
+      reactions: ['장난하나요', '또 누가 던졌나요', '왜 나만 사면 빠지죠', '진짜 너무하네요', '분명 올라갈 줄 알았는데', '멘탈 흔들립니다'],
+      endings: ['화납니다', '손이 떨립니다', '이건 아니죠', '잠깐 쉽니다', '진짜 사람 미치게 하네요', '오늘은 접습니다']
+    },
+    탄식: {
+      lines: [
+              "아... 또 밀렸네요",
+              "휴 조금만 더 갔으면 했는데",
+              "씁쓸합니다 기대했는데요",
+              "희망고문 제대로 당했습니다",
+              "이번엔 진짜 가는 줄 알았습니다",
+              "한숨만 나옵니다",
+              "평단은 왜 이렇게 멀까요",
+              "아까 팔 걸 그랬나요",
+              "조금만 버티면 될 줄 알았는데",
+              "구조대가 오다가 돌아간 느낌입니다",
+              "차트가 사람 놀리네요",
+              "오늘도 마음 수련합니다",
+              "아쉽다 진짜 아쉽습니다",
+              "이러다 다시 원점이네요",
+              "조금씩 빠지는 게 더 힘듭니다",
+              "수익권 문 앞에서 다시 밀렸습니다",
+              "또 내일을 기다려야 하나요",
+              "아씨 그래도 버텨봅니다",
+              "웃프네요 정말",
+              "언젠간 오르겠죠..."
+      ],
+      intros: ['하아.', '아이고.', '아쉽다.', '휴...', '씁쓸합니다.'],
+      subjects: ['이 종목', '주가', '내 평단', '오늘 차트', '계좌', '매수 타이밍'],
+      reactions: ['아깝게 밀리네요', '버티기 힘드네요', '조금만 더 갔으면 했는데', '또 파랗게 변하네요', '희망고문 같네요', '추매했더니 내려가네요'],
+      endings: ['그래도 버팁니다', '내일은 다르겠죠', '구조대 기다립니다', '웃프네요', '한숨만 나옵니다', '다시 올라오겠죠']
+    },
+
+    외부관심: {
+      lines: [
+        '내가 건드리니까 다른 사람들도 보기 시작한 느낌입니다',
+        '거래량 보고 신규 개미들 들어오는 중입니다',
+        '갑자기 종목방 사람이 늘었습니다',
+        '방금 거래량 보고 관심종목 넣었습니다',
+        '이거 조용하더니 사람들 몰리기 시작하네요',
+        '누가 불 붙여놔서 구경 왔습니다',
+        '거래량 붙으니까 차트가 살아납니다',
+        '이제 나 말고도 사는 사람이 생긴 듯합니다',
+        '호가창에 사람이 붙으니 분위기가 다르네요',
+        '커뮤니티에서 소문 타기 시작한 것 같습니다',
+        '아까보다 보는 사람이 확 늘었습니다',
+        '이 종목 갑자기 인기검색 느낌 나네요',
+        '누가 계속 움직이니까 관심 생깁니다',
+        '거래량은 거짓말 안 합니다 사람 붙었네요',
+        '외부 매수세 슬슬 따라붙습니다',
+        '이제 혼자 움직이는 종목은 아닌 것 같습니다',
+        '차트가 움직이니 구경꾼도 매수자로 바뀌네요',
+        '시장에 불씨 붙었습니다',
+        '초반에 불 붙인 사람이 승자인가요',
+        '이 분위기 며칠은 갈 수도 있겠습니다'
+      ],
+      intros: ['관심 붙음.', '사람 몰림.', '거래량 반응.', '소문남.'],
+      subjects: ['외부 투자자', '개미들', '시장 관심', '거래량', '종목방'],
+      reactions: ['따라붙고 있네요', '슬슬 살아납니다', '관심이 번지네요', '매수세가 퍼집니다', '사람들이 몰립니다'],
+      endings: ['분위기 좋습니다', '이제 시작인가요', '며칠은 가겠네요', '지켜봅니다', '불 붙었습니다']
+    },
+    실망매물: {
+      lines: [
+        '매수세 죽으니까 실망매물 나오는 느낌입니다',
+        '아까 뜨겁더니 지금은 빠지는 쪽이네요',
+        '대표님 손 놓으니까 시장이 식었습니다',
+        '거래 여파는 남았는데 방향이 매도로 기우네요',
+        '단타들 빠지는 소리가 들립니다',
+        '관심은 남아 있는데 매수세가 약합니다',
+        '기대감 식으니까 물량이 나옵니다',
+        '한동안 조용하더니 실망 매도 나오네요',
+        '아까 따라붙은 사람들 이제 정리하나 봅니다',
+        '불씨가 꺼지니까 연기만 남았습니다',
+        '거래량은 있는데 위로 못 가는 게 불안합니다',
+        '성장 멈춘 종목 느낌 나기 시작합니다',
+        '대표님 안 뛰면 시장도 바로 눈치챕니다',
+        '아까 광기였는데 지금은 차갑습니다',
+        '이럴 때 슬금슬금 빠지는 게 제일 싫습니다',
+        '기대하고 들어온 사람들 실망한 듯합니다',
+        '공시도 없고 영업도 없으면 빠질 수밖에요',
+        '거래량 남아 있을 때 매도세가 세면 위험합니다',
+        '다시 불 붙일 재료가 필요합니다',
+        '조용히 매도 압력이 쌓이는 중입니다'
+      ],
+      intros: ['식었습니다.', '실망매물.', '힘 빠짐.', '매수세 둔화.'],
+      subjects: ['시장 관심', '단타들', '외부 매수세', '거래량', '주가'],
+      reactions: ['매도로 기우네요', '힘이 빠졌네요', '식어갑니다', '실망감이 쌓입니다', '하락 압력 받네요'],
+      endings: ['조심해야 합니다', '다시 불 붙여야죠', '분위기 안 좋습니다', '아쉽네요', '대표님 어디 갔나요']
+    },
+    정체: {
+      lines: [
+              "회사 일 안 하나요? 차트가 멈춘 느낌입니다",
+              "성장이 없네요 오늘은 너무 조용합니다",
+              "공장 돌아가는 거 맞나요?",
+              "거래량이 식으니까 게시판도 졸립니다",
+              "대표님 어디 가셨나요 영업 멈췄는데요",
+              "이 종목 오늘 휴업인가요",
+              "차트가 너무 심심해서 잠깐 나갔다 옵니다",
+              "아무 일도 안 생기니까 더 불안합니다",
+              "이렇게 조용하면 관심이 빠집니다",
+              "성장 뉴스 없으면 시장도 식죠",
+              "회사에서 뭔가 발표 좀 해주세요",
+              "공장 소식이 없으니 힘이 빠집니다",
+              "거래량 죽으면 주가도 재미없네요",
+              "멈췄는데요... 이거 살아있나요",
+              "한동안 변화가 없으니 지루합니다",
+              "회사 움직임이 너무 없습니다",
+              "주주들 기다리다 지칩니다",
+              "공시 하나만 나와도 분위기 바뀔 텐데요",
+              "성장 스토리가 필요합니다",
+              "이대로 정체되면 사람들 떠납니다",
+              "대표님 영업 버튼 좀 눌러주세요",
+              "시장이 관심을 잃은 것 같습니다",
+              "차트가 숨만 쉬고 있습니다",
+              "이럴 땐 보통 누가 먼저 움직이죠"
+      ],
+      intros: ['정체.', '조용함.', '답답함.', '무반응.'],
+      subjects: ['회사', '주가', '차트', '거래량', '공장', '대표'],
+      reactions: ['움직임이 없네요', '성장이 멈춘 듯합니다', '너무 조용합니다', '관심이 식었습니다', '소식이 필요합니다'],
+      endings: ['뭔가 해야죠', '기다리기 힘듭니다', '슬슬 지칩니다', '뉴스 없나요?', '다시 움직여봅시다']
+    },
+    관망: {
+      lines: [
+              "일단 방향 나올 때까지 봅니다",
+              "지금은 손대기 애매합니다",
+              "거래량 확인하고 들어가도 늦지 않습니다",
+              "박스권이라 눈치싸움이네요",
+              "성급하게 누르면 물릴 자리입니다",
+              "차트는 아직 고민 중입니다",
+              "이 정도면 관망이 답인 듯합니다",
+              "재료 하나 기다립니다",
+              "매수매도 둘 다 팽팽합니다",
+              "흐름이 애매해서 손이 안 갑니다",
+              "여기서 급하게 움직이면 털릴 수 있습니다",
+              "일단 커피 마시며 봅니다",
+              "다음 캔들 보고 판단하겠습니다",
+              "조용할 때가 오히려 무섭습니다",
+              "지금은 회사 뉴스가 필요합니다",
+              "방향성 없는 장은 피곤합니다",
+              "기다림도 전략입니다",
+              "차트가 아직 말이 없습니다",
+              "살짝만 더 지켜보겠습니다",
+              "관망하다가 놓치는 건 아니겠죠"
+      ],
+      intros: ['일단.', '흠.', '차분히.', '눈치싸움.'],
+      subjects: ['인디팩토리', '이 종목', '오늘 차트', '주가', '거래량', '시장 분위기'],
+      reactions: ['숨 고르기 중이네요', '박스권 같네요', '힘 모으는 듯', '아직 방향 안 나왔네요', '눈치싸움 중이네요', '매수매도 팽팽하네요'],
+      endings: ['저는 관망합니다', '한 번 더 봅니다', '분할로 접근할까요?', '재료 기다립니다', '차트 예쁘네요', '성급하면 물립니다']
+    },
+    과열: {
+      lines: [
+              "와씨 게시판 완전 과열입니다",
+              "이건 불나방 모드입니다",
+              "다들 너무 흥분한 것 같습니다",
+              "좋긴 한데 너무 뜨겁습니다",
+              "FOMO 제대로 옵니다",
+              "지금 들어가면 늦은 건가요",
+              "분위기 미쳤는데 조심은 해야 합니다",
+              "광기 구간 진입한 느낌입니다",
+              "거래량은 좋은데 과열도 무섭습니다",
+              "환호가 많을 때가 제일 위험하긴 합니다",
+              "아싸 가즈아 분위기인데 손이 떨립니다",
+              "다들 소리 지르는 중입니다",
+              "차트보다 댓글창이 더 뜨겁습니다",
+              "이러다 조정 오면 난리납니다",
+              "좋은데 무서운 자리입니다",
+              "과열인데도 누르고 싶습니다",
+              "오늘 게시판 잠 못 자겠네요",
+              "상승은 좋은데 속도가 너무 빠릅니다",
+              "냉정하게 보면 조심해야 합니다",
+              "그래도 지금은 축제네요"
+      ],
+      intros: ['광기.', '게시판 터짐.', '과열주의.', '와글와글.'],
+      subjects: ['게시판', '이 종목', '인디팩토리', '개미들', '주가', '댓글창'],
+      reactions: ['광기네요', '너무 뜨겁네요', '단타 몰렸네요', '과열 냄새납니다', 'FOMO 오네요', '다들 흥분했네요', '분위기 미쳤습니다'],
+      endings: ['ㅋㅋ', '조심하세요', '그래도 갑니다?', '손이 근질근질', '이게 게임이지', '한 번 식혀야 합니다', '불나방 모드네요']
+    }
+  };
+
+
+  // v3.9 댓글 확장: 말끝 다양화 + 공장 이벤트 전용 반응
+  const extraCommentLines = {
+    상승: [
+      '오 괜찮은데? 슬슬 위로 가네요', '와씨 빨간불 들어왔네', '아싸 조금씩 살아난다', '이 흐름이면 오늘 볼만하겠는데',
+      '방금 매수한 사람 웃고 있겠구먼', '조용히 올라서 더 무섭네', '이거 생각보다 힘 있네요', '빨간 캔들 보니까 손이 근질근질합니다만',
+      '오랜만에 계좌가 숨 쉬네요', '천천히 가도 좋으니 꺾이지만 말자', '호가가 얇아서 위로 잘 뜨는 듯?', '분위기 살짝 바뀌었네요',
+      '이 정도면 매수세 붙었다고 봐도 되나', '음 괜찮습니다만 아직은 관망', '대표가 뭐 하나 했나 봐요', '오 이건 조금 설레는데...',
+      '장대까진 아닌데 기분은 좋네요', '슬금슬금 올라가는 게 더 좋다', '시장 관심 붙는 소리 들립니다', '와 여기 이제 사람 좀 오네요'
+    ],
+    하락: [
+      '아씨 또 밀리네', '아... 분위기 왜 이래요', '그지같네 진짜 힘이 없네', '파란불 보니까 손이 식습니다',
+      '어제 좋았는데 오늘 왜 이러지', '매수하려다 뒤로가기 눌렀습니다', '이거 괜히 들어갔나 싶네요', '힘이 빠졌는데요...',
+      '하락은 천천히 와도 기분 나쁘구먼', '아쉽구먼. 반등이 안 나오네', '오늘은 좀 쉬어가는 장인가', '호가가 무겁습니다만',
+      '거래량 없이 빠지는 것도 별로예요', '누가 계속 누르나?', '반등 좀 보여줘요 대표님', '아 이건 멘탈 흔들리네',
+      '물타기 버튼 찾다가 정신 차렸습니다', '조용히 떨어지는 게 더 무섭다', '매도세가 은근히 질기네요', '오늘 차트 좀 쓰네요'
+    ],
+    급등: [
+      '와씨 뭐야 갑자기 쏩니다', '아싸 이게 공장주 맛이지', '어어 너무 빨리 가는데?', '이거 뉴스 샌 거 아닌가요?',
+      '캔들 미쳤네요 진짜', '방금 산 사람 승리자네', '게시판 불났습니다만', '와 이건 눈으로 봐도 호재다',
+      '매수 버튼 누를 틈도 없었는데...', '이 정도면 축제 열어야죠', '불기둥 오랜만에 보네', '가슴이 웅장해지네요',
+      '와씨 계좌가 웃습니다', '이거 장마감까지 버티면 대박인데', '큰손 들어온 냄새 납니다', '공장 뉴스라도 떴나?',
+      '이건 단순 반등이 아닌데요', '손절한 사람 울겠구먼', '아까 살걸 그랬다...', '오늘 댓글창 잠 못 자겠네요'
+    ],
+    폭락: [
+      '아씨 이건 좀 세다', '와 이건 멘탈 나가는데요', '그지같네 진짜 수직낙하네', '구조대 어디 갔습니까',
+      '아까 좋다고 한 사람 누구예요', '이건 뉴스 확인해야 됩니다만', '계좌가 불량품 됐네요', '장대음봉은 반칙이지...',
+      '하락 속도 너무 빠른데', '이 정도면 공장 정전 난 거 아닌가', '물린 사람들 조용해졌네요', '아 이건 아쉽구먼 수준이 아닙니다',
+      '매도 버튼 늦게 눌렀습니다', '진짜 지하실 가나요?', '멘탈 공장 폐업했습니다', '반등 한 번만 줘요',
+      '장마감까지 버틸 자신이 없네요', '오늘 차트 참교육하네요', '대표님 해명 부탁드립니다', '이건 커피로도 안 됩니다'
+    ],
+    대량매수: [
+      '누가 계속 긁었네요', '매수벽 생겼는데요?', '오 이거 큰손 붙은 듯', '호가를 쓸어가는데...',
+      '와씨 거래량 확 붙었습니다', '사람들 몰리는 게 보이네요', '나만 본 게 아니었구먼', '외부 거래가 따라붙는 느낌입니다',
+      '매수세가 장난 아닌데요', '이건 단타만은 아닌 듯?', '아싸 사람 들어온다', '조용하던 방이 갑자기 살아났습니다',
+      '이거 누가 계속 사는데요', '호가창 따뜻합니다만', '거래량 붙으니 게임이 되네요', '방금부터 분위기 바뀌었어요',
+      '오 이건 관심 확산입니다', '매수세가 꼬리를 무네요', '사람들 구경하다가 손대는 듯', '오늘은 좀 시끄럽겠네요'
+    ],
+    대량매도: [
+      '누가 던졌네요', '매도 물량 좀 많은데...', '아씨 호가가 눌립니다', '차익실현인가요?',
+      '큰손 나간 느낌인데요', '방금 물량 뭐였죠', '매도벽 생기면 숨 막힙니다', '좋다가 갑자기 싸해졌구먼',
+      '아 이건 조심해야겠습니다만', '던지는 사람 계속 나오네요', '단타 빠졌나 봅니다', '호가가 차갑습니다',
+      '매수세가 받아내질 못하네요', '거래량은 많은데 방향이 별로야', '아까 들어온 사람 괜찮나요', '매도세가 질기네요',
+      '이거 고점 매도 맞나요?', '시장 관심은 있는데 매도 우위네요', '아쉽구먼. 버티질 못하네', '오늘은 방어전입니다'
+    ],
+    기쁨: [
+      '아싸 수익권입니다', '와씨 오늘 기분 좋네요', '치킨각 살짝 보입니다', '계좌가 웃고 있구먼',
+      '대표님 오늘은 인정합니다', '이 맛에 버팁니다', '조용히 박수칩니다', '좋네요. 아주 좋아요',
+      '드디어 보상받는 느낌', '오늘은 커피 말고 고기죠', '와 이건 저장해둬야 합니다', '오랜만에 기분 좋습니다만',
+      '수익률이 공장 가동했습니다', '아싸 반등 성공', '오늘 게시판 훈훈하네요', '기쁨의 매도 참는 중...',
+      '아 이러면 못 나가죠', '계속 이렇게만 갑시다', '살짝 소름 돋네요', '좋은 뉴스 하나 더 주세요'
+    ],
+    분노: [
+      '아씨 대표님 뭐 합니까', '그지같네 진짜', '공장 일 안 하나요?', '이사회 뭐 했는데요',
+      '아 이건 좀 화나네요', '주주들 속 터집니다', '왜 좋은 척하다 빠져요', '진짜 관리 안 됩니까',
+      '불량품보다 내 멘탈이 불량입니다', '뉴스만 요란하고 실속 없네', '아쉽구먼이 아니라 열받네요', '이 정도면 해명 필요합니다만',
+      '매수한 내가 잘못이지...', '대표님 야근하세요', '공시 좀 제대로 내주세요', '댓글창 분위기 살벌합니다',
+      '또 기다리라고요?', '신뢰가 깎입니다', '계속 이러면 손절각', '오늘은 좀 실망이 큽니다'
+    ],
+    탄식: [
+      '아...', '하... 어렵네요', '숨 고르기라 믿고 싶습니다', '오늘은 아닌가 봅니다',
+      '아쉽구먼', '반등 줄 듯 말 듯하네', '기대했다가 식었습니다', '이러면 관망이 맞겠죠',
+      '괜히 들여다봤네요', '계좌 보고 조용히 내려놨습니다', '오전 분위기는 좋았는데...', '역시 쉬운 종목이 아니네요',
+      '살짝만 올려줘도 좋겠는데', '힘이 없습니다만', '오늘은 커피가 쓰네요', '차트가 마음을 긁습니다',
+      '장마감만 기다립니다', '뭔가 부족하구먼', '이대로 끝나면 아쉽다', '한 번만 더 버텨봅니다'
+    ],
+    관망: [
+      '일단 봅니다', '아직 방향은 모르겠네요', '지켜보는 중...', '매수도 매도도 애매합니다',
+      '호재 하나만 더 있으면 좋겠구먼', '이 구간은 손이 안 나갑니다', '차트가 눈치싸움 중이네요', '천천히 봐도 될 듯합니다',
+      '오늘은 구경만 할게요', '분위기 바뀌면 들어갑니다', '지금은 참는 사람이 이기는 자리?', '댓글창도 조용해졌네요',
+      '거래량 좀 더 보고요', '대표 움직임 보고 판단합니다', '아직은 확신이 없습니다만', '괜찮은데 급하진 않네요',
+      '이런 자리가 제일 어렵다', '매수 버튼 위에 손만 올려놨습니다', '일단 점심부터 먹고 생각하죠', '장 흐름 좀 더 보겠습니다'
+    ],
+    정체: [
+      '회사 일 안 하나요?', '멈췄는데...', '성장이 없네요', '대표님 어디 갔습니까',
+      '공장 조용한데요?', '차트가 낮잠 잡니다', '거래량이 말라갑니다', '이러다 사람 다 나가겠구먼',
+      '뭐라도 공시 좀 해주세요', '아무 일도 안 일어나니 더 불안합니다', '게시판도 숨 죽였네요', '재료 기다리는 중입니다만',
+      '공장 문 열었나요?', '성장 버튼 어디 있죠', '이 종목은 기다림 게임인가요', '조용한 건 좋은데 너무 조용합니다',
+      '터치 안 하면 회사도 쉬나 봅니다', '일감이 없는 건 아니겠죠?', '투자자 관심 식는 중...', '대표님 영업 한 번만 더요'
+    ],
+    공장이벤트: [
+      '오 이거 공장 한다는데요?', '신규 공장 계획 떴네요', '공장 신설이면 재료 큽니다만', '이사회 승인만 나면 볼만하겠구먼',
+      '착공 뉴스 나오면 차트 난리 나겠는데', '오 설비투자 들어갑니다', '공장 짓는 회사는 기다리는 맛이 있죠', '완공까지 버틸 사람?',
+      '시운전 성공하면 실적 반영이죠', '공장 뉴스는 확실히 시장이 반응하네요', '이거 삼성 공장 뉴스 느낌으로 가나요?', '자금 조달만 잘 되면 좋겠습니다',
+      '공사 지연만 안 나와라...', '공장 발표에 댓글창 살아났습니다', '오 이건 회사가 움직였네요', '설비투자라면 장기 재료 맞죠',
+      '공장 짓는다는 말에 사람 몰리네요', '완공 뉴스 기다립니다', '근로자랑 라인 증설도 중요하겠네요', '공장 하나가 차트 분위기 바꾸네요'
+    ],
+    공장악재: [
+      '공장 지연은 좀 아픈데요', '자금 조달 막히면 위험합니다', '불량품 뉴스는 악재죠', '아씨 공장 쪽에서 삐끗했네',
+      '시운전 실패면 신뢰 깎입니다', '공장 뉴스가 좋을 줄 알았는데...', '이건 단기 조정 나올 만합니다', '대표님 현장 가보셔야 합니다만',
+      '공사비 부족이라니 아쉽구먼', '품질 문제는 가볍게 보면 안 됩니다', '댓글창 바로 싸해졌네요', '공장 리스크 확인했습니다',
+      '설비투자는 좋은데 관리가 문제네요', '불량률 줄여야 합니다', '이사회 반려면 멘탈 나가죠', '공장 이슈는 주가에 바로 박히네요',
+      '아 이건 해명이 필요합니다', '생산 차질은 실적에 아프죠', '공장 믿고 샀는데 불안합니다', '재료가 악재로 변했네...'
+    ]
+  };
+  Object.entries(extraCommentLines).forEach(([mode, lines])=>{
+    if(!commentParts[mode]) commentParts[mode] = { lines: [] };
+    commentParts[mode].lines = [...(commentParts[mode].lines || []), ...lines];
+  });
+
+  const nicknames = ['주린공장장','차트보는인디','물린개미','공장개미','장투로봇','단타고양이','세력감시반','샤프트장인','캔들중독','월급투자자','호가창요정','구조대대기'];
+  const factoryMaxSlots = 12;
+  const factoryCatalog = [
+    {name:'수작업 조립대', item:'단순 부품', icon:'📦', cost:1000000, review:2, approval:2, funding:1, build:7, trial:1, output:25000, defect:.15, approvalBase:.82},
+    {name:'소형 부품공장', item:'금속 브라켓', icon:'🏭', cost:3500000, review:3, approval:2, funding:2, build:12, trial:2, output:72000, defect:.135, approvalBase:.79},
+    {name:'선반 가공실', item:'샤프트', icon:'⚙️', cost:9000000, review:3, approval:3, funding:2, build:18, trial:3, output:155000, defect:.125, approvalBase:.76},
+    {name:'밀링 가공실', item:'정밀 플레이트', icon:'🔩', cost:22000000, review:4, approval:3, funding:3, build:25, trial:4, output:310000, defect:.118, approvalBase:.73},
+    {name:'컨베이어 라인', item:'이송 모듈', icon:'🛠️', cost:55000000, review:5, approval:4, funding:3, build:35, trial:5, output:680000, defect:.108, approvalBase:.70},
+    {name:'자동 조립라인', item:'구동 유닛', icon:'🤖', cost:140000000, review:6, approval:5, funding:4, build:50, trial:6, output:1450000, defect:.10, approvalBase:.68},
+    {name:'정밀 부품센터', item:'고급 모듈', icon:'💠', cost:360000000, review:8, approval:6, funding:5, build:70, trial:8, output:3200000, defect:.095, approvalBase:.66},
+    {name:'스마트 팩토리', item:'자동화 설비', icon:'🏗️', cost:900000000, review:10, approval:8, funding:7, build:95, trial:10, output:7600000, defect:.09, approvalBase:.64},
+    {name:'로봇 생산동', item:'산업 로봇', icon:'🦾', cost:2300000000, review:13, approval:10, funding:9, build:125, trial:14, output:18000000, defect:.085, approvalBase:.62},
+    {name:'반도체 장비동', item:'장비 부품', icon:'💿', cost:6500000000, review:16, approval:13, funding:12, build:180, trial:18, output:45000000, defect:.08, approvalBase:.60},
+    {name:'AI 제조센터', item:'AI 설비', icon:'🧠', cost:18000000000, review:22, approval:16, funding:16, build:260, trial:24, output:120000000, defect:.075, approvalBase:.58},
+    {name:'우주항공 공장', item:'위성 부품', icon:'🚀', cost:55000000000, review:30, approval:22, funding:20, build:420, trial:35, output:360000000, defect:.07, approvalBase:.56}
+  ];
+  const stageText = {review:'계획 검토중', approval:'이사회 승인중', funding:'자금 조달중', build:'건설중', trial:'시운전중', operating:'가동중', rejected:'승인 반려'};
+  const stageNext = {review:'approval', build:'trial', trial:'operating'};
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  let chartW = 800, chartH = 300;
+  let chartViewCount = 56;
+  let chartOffset = 0;
+  const minViewCount = 10;
+  const maxViewCount = 520;
+  const candleHistoryLimit = 1500;
+  const chartPointers = new Map();
+  let dragStartX = 0;
+  let dragStartOffset = 0;
+  let pinchStartDistance = 0;
+  let pinchStartViewCount = chartViewCount;
+
+  // 시장 계산값은 여기서 조정하면 됩니다.
+  // 핵심: 공장 생산은 실적/기업가치를 올리고, 주가는 시장 심리와 과열도에 따라 따로 움직입니다.
+
+  // ===== 주식시장 / 하루 시간 설정 =====
+  const marketConfig = {
+    revenueToValue: 0.42,
+    interestToValue: 0.16,
+    factoryValueBonus: 10,
+    rndValueBonus: 8,
+    targetFollow: 0.045,
+    baseVolatility: 1.15,
+    volumeByMove: 2.6,
+    overheatLine: 1.28,
+    overheatBuild: 0.75,
+    overheatPenalty: 0.95,
+    candleDurationMs: 20000,
+    marketOpenMs: 15000,
+    marketCloseMs: 5000,
+    touchWindowMs: 10000,
+    touchActiveGraceMs: 2200,
+    touchHeatMax: 180,
+    buyPressureMax: 115,
+    idlePressureMax: 95,
+    marketAttentionMax: 260,
+    externalBuyMax: 160,
+    externalSellMax: 150,
+    externalVolumeMax: 420,
+    touchHeatGain: 1.35,
+    buyPressureGain: 0.48,
+    attentionGain: 0.95,
+    externalBuyGain: 0.42,
+    externalVolumeGain: 1.2,
+    attentionDecayActive: 0.995,
+    attentionDecayIdle: 0.976,
+    externalBuyDecayActive: 0.990,
+    externalBuyDecayIdle: 0.943,
+    externalSellDecayActive: 0.825,
+    externalSellDecayIdle: 0.984,
+    externalVolumeDecay: 0.955,
+    externalVolumeTradeRate: 0.22,
+    idleSellStartMs: 6500,
+    idleDisappointmentStartMs: 12000,
+    touchPressureDrift: 0.034,
+    recentTapDrift: 0.018,
+    idleDrift: 0.048,
+    heatVolumeFactor: 0.34,
+    afterMarketHeatGain: 1.55,
+    afterMarketGapTapRate: 0.0009,
+    afterMarketGapHeatRate: 0.0012,
+    maxGapUp: 0.22,
+    maxGapDown: -0.18
+  };
+
+
+  function getSpec(type){ return factoryCatalog[(Number(type)||0) % factoryCatalog.length]; }
+  function operatingFactories(){ normalizeFactories(); return state.factories.filter(f=>f && f.status === 'operating'); }
+  function projectFactories(){ normalizeFactories(); return state.factories.filter(f=>f && f.status && f.status !== 'operating' && f.status !== 'rejected'); }
+  function marketElapsed(now=Date.now()){
+    if(!Number.isFinite(state.dayStartedAt) || state.dayStartedAt <= 0) state.dayStartedAt = now;
+    return now - state.dayStartedAt;
+  }
+  function marketPhase(now=Date.now()){
+    const total = marketConfig.candleDurationMs;
+    let elapsed = marketElapsed(now);
+    if(elapsed < 0) elapsed = 0;
+    const open = elapsed < marketConfig.marketOpenMs;
+    const left = open ? marketConfig.marketOpenMs - elapsed : total - elapsed;
+    return {open, elapsed, left:Math.max(0,left), label: open ? '장중' : '장마감'};
+  }
+  function addOpeningVolume(v){
+    const vol = Math.max(0, Math.floor(Number(v)||0));
+    if(vol <= 0) return;
+    state.volume += vol;
+    state.todayVolume += vol;
+    state.pendingOpeningVolume = Math.max(0, Math.floor(Number(state.pendingOpeningVolume)||0)) + vol;
+  }
+
+  function afterMarketTouchCount(){
+    return Math.max(0, Math.floor(Number(state.afterMarketTouches)||0));
+  }
+
+  function openingGapLabel(gapPct){
+    const pct = Math.abs(gapPct * 100).toFixed(1);
+    return gapPct >= 0 ? `갭상승 +${pct}%` : `갭하락 -${pct}%`;
+  }
+
+  function applyOpeningGapIfNeeded(now=Date.now()){
+    if(state.price <= 0) return 0;
+    const phase = marketPhase(now);
+    if(!phase.open) return 0;
+    if(state.openingGapAppliedDay === state.gameDay) return 0;
+    state.openingGapAppliedDay = state.gameDay;
+
+    // 전일 종가가 없는 첫 거래일에는 갭을 만들지 않습니다.
+    if(state.prevClose <= 0 && (!Array.isArray(state.candles) || state.candles.length === 0)){
+      state.afterMarketTouches = 0;
+      state.overnightHeat = 0;
+      state.lastOpeningGap = 0;
+      return 0;
+    }
+
+    const taps = afterMarketTouchCount();
+    const nightHeat = Math.max(0, Number(state.overnightHeat)||0);
+    const baseUp = taps * marketConfig.afterMarketGapTapRate
+      + nightHeat * marketConfig.afterMarketGapHeatRate
+      + Math.max(0, state.eventHeat) * 0.00022
+      + Math.max(0, state.sentiment) * 0.00028;
+    const overheatRisk = Math.max(0, state.overheat) * 0.0039;
+    const silenceRisk = taps <= 0 ? 0.018 + Math.random() * 0.026 : 0;
+    const idleRisk = Math.max(0, state.idlePressure) * 0.0012;
+    const randomGap = (Math.random() - 0.47) * 0.026;
+    let gapPct = baseUp - overheatRisk - silenceRisk - idleRisk + randomGap;
+
+    // 장마감 터치를 했다면 최소한 약한 장전 기대감을 보장합니다.
+    if(taps >= 8) gapPct = Math.max(gapPct, 0.010 + Math.min(0.055, taps * 0.00038));
+    if(taps >= 45) gapPct += Math.min(0.055, (taps - 45) * 0.00036);
+    if(taps >= 120) gapPct += Math.min(0.060, (taps - 120) * 0.00026);
+    gapPct = clamp(gapPct, marketConfig.maxGapDown, marketConfig.maxGapUp);
+
+    state.afterMarketTouches = 0;
+    state.overnightHeat = 0;
+    state.lastOpeningGap = gapPct;
+
+    if(Math.abs(gapPct) < 0.004){
+      state.lastOpeningGap = 0;
+      return 0;
+    }
+
+    const old = state.price;
+    const next = Math.max(1, old * (1 + gapPct));
+    state.price = next;
+    const vol = 8 + Math.floor(Math.abs(gapPct) * 780 + taps * 0.42 + Math.random() * 16);
+    addOpeningVolume(vol);
+
+    if(gapPct > 0){
+      state.sentiment += Math.min(12, 3 + gapPct * 45);
+      state.eventHeat += Math.min(22, 4 + gapPct * 70);
+      state.overheat += Math.min(7, gapPct * 28);
+      showFactoryNews(`[장전 뉴스] 야간 관심 지속 · ${openingGapLabel(gapPct)} 출발`, 'good');
+      addCommunityComment(gapPct > 0.08 ? '급등' : '상승');
+    }else{
+      state.sentiment -= Math.min(12, 3 + Math.abs(gapPct) * 38);
+      state.eventHeat += Math.min(14, 3 + Math.abs(gapPct) * 40);
+      showFactoryNews(`[장전 뉴스] 전일 과열/관심 둔화 · ${openingGapLabel(gapPct)} 출발`, 'bad');
+      addCommunityComment(gapPct < -0.07 ? '폭락' : '하락');
+    }
+    return gapPct;
+  }
+
+  function stageTotalDays(factory){
+    const spec = getSpec(factory.type);
+    return Math.max(1, Number(factory.stageTotalDays) || Number(spec[factory.status]) || 1);
+  }
+  function stageProgress(factory){
+    const total = stageTotalDays(factory);
+    const left = Math.max(0, Number(factory.daysLeft)||0);
+    return clamp((total - left) / total, 0, 1);
+  }
+  function approvalChance(factory){
+    const spec = getSpec(factory.type);
+    const cashBuffer = state.cash / Math.max(1, Number(factory.cost)||spec.cost||1);
+    const finance = clamp((cashBuffer - .15) * .06, -.08, .10);
+    const moodBonus = clamp(state.sentiment * .002 + state.eventHeat * .001, -.08, .10);
+    const overheatPenalty = clamp(state.overheat * .0035, 0, .18);
+    const rndBonus = clamp(state.rndLevel * .01, 0, .08);
+    return clamp((spec.approvalBase || .65) + finance + moodBonus + rndBonus - overheatPenalty, .28, .92);
+  }
+  function setFactoryStage(factory, stage){
+    const spec = getSpec(factory.type);
+    factory.status = stage;
+    factory.stageTotalDays = Math.max(1, Number(spec[stage]) || 1);
+    factory.daysLeft = factory.stageTotalDays;
+    factory.stageStartedDay = state.gameDay;
+  }
+  function startFactoryProject(){ buyFactory(); }
+  function processFactoryProjectsForDay(){
+    normalizeFactories();
+    let changed = false;
+    for(let i=state.factories.length-1;i>=0;i--){
+      const f = state.factories[i];
+      if(!f || f.status === 'operating' || f.status === 'rejected') continue;
+      f.daysLeft = Math.max(0, (Number(f.daysLeft)||0) - 1);
+      changed = true;
+      if(f.daysLeft > 0){
+        if(f.status === 'build' || f.status === 'trial' || f.status === 'funding' || Math.random() < .45){
+          showFactoryNews(`DAY ${state.gameDay} · ${f.name} ${stageText[f.status] || '진행중'} · ${f.daysLeft}일 남음`, 'info');
+        }
+        continue;
+      }
+      const spec = getSpec(f.type);
+      const totalCost = Number(f.cost)||spec.cost||0;
+      if(f.status === 'approval'){
+        const chance = approvalChance(f);
+        if(Math.random() > chance){
+          const refund = Math.floor((Number(f.paid)||0) * 0.45);
+          state.cash += refund;
+          state.sentiment -= 18;
+          state.eventHeat += 14;
+          state.overheat = Math.max(0, state.overheat - 2.5);
+          pushFactoryLog(`❌ DAY ${state.gameDay} ${f.name} 이사회 반려 · 환급 ${fmt(refund)}`);
+          applyFactoryEventImpact(f, `${f.name} 이사회 반려 · 투자심리 급랭`, {pct:-(0.18 + Math.random()*0.14), heat:20, sentiment:-22, volume:90, tone:'bad', comment:'분노'});
+          state.factories.splice(i,1);
+          continue;
+        }
+        setFactoryStage(f, 'funding');
+        state.sentiment += 15;
+        state.eventHeat += 24;
+        addTradeVolume(90 + Math.floor(Math.random()*75));
+        pushFactoryLog(`✅ DAY ${state.gameDay} ${f.name} 승인 통과 · 총사업비 ${fmt(totalCost)} 조달 단계`);
+        applyFactoryEventImpact(f, `${f.name} 이사회 승인 통과 · 자금 조달 착수`, {pct:(0.18 + Math.random()*0.18), heat:34, sentiment:24, volume:155, valueRate:.055, tone:'good', comment:'급등'});
+        continue;
+      }
+      if(f.status === 'funding'){
+        const remain = factoryRemainingCost(f);
+        if(remain <= 0){
+          setFactoryStage(f, 'build');
+          pushFactoryLog(`🏗️ DAY ${state.gameDay} ${f.name} 착공 시작`);
+          applyFactoryEventImpact(f, `${f.name} 착공 시작 · 대형 설비투자 본격화`, {pct:(0.30 + Math.random()*0.25), heat:42, sentiment:30, volume:220, valueRate:.075, tone:'good', comment:'급등'});
+          continue;
+        }
+        const minPay = Math.max(1, Math.min(remain, Math.floor(totalCost * 0.30)));
+        if(state.cash >= minPay){
+          const pay = Math.min(remain, Math.max(minPay, Math.floor(state.cash * 0.65)));
+          state.cash -= pay;
+          f.paid = Math.min(totalCost, (Number(f.paid)||0) + pay);
+          pushFactoryLog(`💰 DAY ${state.gameDay} ${f.name} 사업비 집행 ${fmt(pay)} · 누적 ${fmt(f.paid)}/${fmt(totalCost)}`);
+          showFactoryNews(`${f.name} 사업비 집행 ${fmt(pay)} · 남은 조달 ${fmt(factoryRemainingCost(f))}`, 'info');
+          addTradeVolume(18 + Math.floor(pay / 25000));
+          state.companyValue += pay * 0.04;
+          state.eventHeat += 5;
+          if(factoryRemainingCost(f) <= 0){
+            setFactoryStage(f, 'build');
+            pushFactoryLog(`🏗️ DAY ${state.gameDay} ${f.name} 착공 시작`);
+            applyFactoryEventImpact(f, `${f.name} 착공 시작 · 대형 설비투자 본격화`, {pct:(0.30 + Math.random()*0.25), heat:42, sentiment:30, volume:220, valueRate:.075, tone:'good', comment:'급등'});
+          }else{
+            f.daysLeft = 1;
+            f.stageTotalDays = Math.max(1, Number(spec.funding)||1);
+          }
+        }else{
+          f.daysLeft = 1;
+          f.stageTotalDays = Math.max(1, Number(spec.funding)||1);
+          state.sentiment -= 3.5;
+          state.eventHeat += 4;
+          addTradeVolume(16 + Math.floor(Math.random()*18));
+          pushFactoryLog(`💸 DAY ${state.gameDay} ${f.name} 자금 조달 지연 · 필요 ${fmt(minPay)}`);
+          applyFactoryEventImpact(f, `${f.name} 자금 조달 지연 · 착공 불확실성`, {pct:-(0.035 + Math.random()*0.055), heat:8, sentiment:-7, volume:45, tone:'bad', comment:'탄식'});
+        }
+        continue;
+      }
+      const next = stageNext[f.status];
+      if(next === 'operating'){
+        f.status = 'operating';
+        f.daysLeft = 0;
+        f.stageTotalDays = 0;
+        f.startedDay = state.gameDay;
+        f.made = Number(f.made)||0;
+        f.defects = Number(f.defects)||0;
+        f.workers = Math.max(1, Math.floor(Number(f.workers)||1));
+        f.lines = Math.max(1, Math.floor(Number(f.lines)||1));
+        state.companyValue += totalCost * 0.30 + spec.output * 3;
+        state.eventHeat += 28;
+        state.sentiment += 18;
+        addTradeVolume(120 + Math.floor(Math.random()*110));
+        pushFactoryLog(`🏁 DAY ${state.gameDay} ${f.name} 정식 가동 시작`);
+        applyFactoryEventImpact(f, `${f.name} 정식 가동 · 매출 반영 시작`, {pct:(0.24 + Math.random()*0.20), heat:34, sentiment:25, volume:190, valueRate:.10, tone:'good', comment:'기쁨'});
+      } else if(next){
+        setFactoryStage(f, next);
+        const msg = next === 'approval' ? '이사회 승인 단계 진입' : next === 'trial' ? '완공 후 시운전 시작' : '다음 단계 진입';
+        state.eventHeat += next === 'trial' ? 18 : 9;
+        pushFactoryLog(`📌 DAY ${state.gameDay} ${f.name} ${msg}`);
+        if(next === 'approval'){
+          applyFactoryEventImpact(f, `${f.name} 이사회 승인 심사 돌입`, {pct:(0.09 + Math.random()*0.08), heat:18, sentiment:12, volume:85, valueRate:.026, tone:'good', comment:'상승'});
+        }else if(next === 'trial'){
+          applyFactoryEventImpact(f, `${f.name} 완공 · 시운전 시작`, {pct:(0.18 + Math.random()*0.14), heat:26, sentiment:18, volume:130, valueRate:.060, tone:'good', comment:'상승'});
+        }else{
+          showFactoryNews(`${f.name} ${msg}`, 'info');
+          maybeCommunity('관망', .8);
+        }
+      }
+    }
+    return changed;
+  }
+  function processFactoryProductionDay(){
+    const ops = operatingFactories();
+    if(!ops.length) return 0;
+    let revenueGain = 0;
+    let defects = 0;
+    let goodCount = 0;
+    ops.forEach((factory)=>{
+      const spec = getSpec(factory.type);
+      const defectChance = factoryDefectChance(factory);
+      const idleChance = clamp(.08 - state.rndLevel * .004 + Math.max(0, (Number(factory.lines)||1) - (Number(factory.workers)||1)) * .006, .02, .14);
+      if(Math.random() < idleChance){
+        pushFactoryLog(`⏸️ DAY ${state.gameDay} ${factory.name} 점검으로 생산 지연`);
+        if(Math.random() < .35) showFactoryNews(`${factory.name} 점검 지연 · 생산 차질`, 'bad');
+        state.sentiment -= .7;
+        return;
+      }
+      if(Math.random() < defectChance){
+        defects++;
+        factory.defects = (Number(factory.defects)||0) + 1;
+        factory.pulse = Date.now();
+        factory.lastGain = 0;
+        state.companyValue -= Math.max(2, spec.output * .22);
+        state.sentiment -= 4.5;
+        pushFactoryLog(`⚠️ DAY ${state.gameDay} ${factory.name} 불량품 발생 · ${factory.item}`);
+        showFactoryNews(`${factory.name} 불량품 발생 · 품질 신뢰도 하락`, 'bad');
+        return;
+      }
+      const gain = Math.max(10, Math.floor(factoryDailyOutput(factory) * (0.82 + Math.random()*.38)));
+      goodCount++;
+      revenueGain += gain;
+      factory.made = (Number(factory.made)||0) + 1;
+      factory.lastGain = gain;
+      factory.pulse = Date.now();
+      pushFactoryLog(`${factory.icon || '🏭'} DAY ${state.gameDay} ${factory.name} 양품 출하 +${fmt(gain)} · ${factory.workers}명/${factory.lines}라인`);
+      if(Math.random() < .52) showFactoryNews(`${factory.name} 양품 출하 · 매출 +${fmt(gain)}`, 'good');
+    });
+    if(revenueGain > 0){
+      state.cash += revenueGain;
+      state.revenue += revenueGain;
+      state.companyValue += revenueGain * marketConfig.revenueToValue + ops.length * 1500;
+      state.interest += revenueGain * 0.000018 + ops.length * .35;
+      state.sentiment += revenueGain * 0.000004 + goodCount * .42;
+      state.eventHeat += Math.min(22, revenueGain * .000018);
+      addTradeVolume(Math.floor(20 + revenueGain / 35000 + Math.random()*32));
+      maybeCommunity(goodCount >= 2 ? '상승' : null, .52);
+    }
+    if(defects > 0){
+      state.eventHeat += defects * 5;
+      state.overheat += defects * .45;
+      addTradeVolume(defects * 25);
+      maybeCommunity(defects >= 2 ? '분노' : '탄식', .9);
+      if(defects >= 2){
+        movePrice(-Math.max(1, state.price * (0.05 + Math.random()*0.07)));
+      }
+    }
+    return revenueGain;
+  }
+  function processFactoryDayClose(){
+    if(state.lastFactoryDayProcessed >= state.gameDay) return;
+    state.lastFactoryDayProcessed = state.gameDay;
+    processFactoryProjectsForDay();
+    processFactoryProductionDay();
+  }
+
+  function simulateOfflineMarketDay(){
+    if(state.price <= 0) return;
+    const previous = Math.max(1, Number(state.price)||1);
+    const fair = Math.max(1, fundamentalPrice());
+    const gapBias = clamp(state.sentiment * 0.00045 + state.eventHeat * 0.00022 - state.overheat * 0.0012 + (Math.random() - 0.52) * 0.028, -0.09, 0.11);
+    let price = Math.max(1, previous * (1 + gapBias));
+    let high = price;
+    let low = price;
+    let volume = 6 + Math.floor(Math.abs(gapBias) * 900 + Math.random() * 16);
+    for(let i=0;i<8;i++){
+      const valuePull = clamp((fair - price) / Math.max(1, price) * 0.035, -0.028, 0.032);
+      const mood = clamp(state.sentiment * 0.00055 + state.eventHeat * 0.00028 - state.overheat * 0.00105, -0.035, 0.042);
+      const noise = (Math.random() - 0.50) * 0.052;
+      const step = clamp(valuePull + mood + noise, -0.075, 0.085);
+      price = Math.max(1, price * (1 + step));
+      high = Math.max(high, price);
+      low = Math.min(low, price);
+      volume += Math.floor(3 + Math.abs(step) * 520 + Math.random() * 10);
+    }
+    const candle = {o:Math.round(previous * (1 + gapBias)), h:Math.round(high), l:Math.round(low), c:Math.round(price), v:volume, gapPct:gapBias, day:state.gameDay};
+    candle.o = Math.max(1, candle.o);
+    candle.h = Math.max(candle.o, candle.h, candle.c);
+    candle.l = Math.max(1, Math.min(candle.o, candle.l, candle.c));
+    state.candles.push(candle);
+    while(state.candles.length > candleHistoryLimit) state.candles.shift();
+    state.price = candle.c;
+    state.prevClose = candle.c;
+    state.volume += volume;
+    state.todayVolume = 0;
+    state.sentiment *= 0.91;
+    state.eventHeat *= 0.92;
+    state.interest *= 0.997;
+    state.companyValue *= 1.00012;
+    state.overheat *= 0.975;
+  }
+
+  function applyOfflineProgress(){
+    const now = Date.now();
+    const last = Number(state.lastSavedAt || state.lastSave || now);
+    if(!Number.isFinite(last) || last <= 0) return;
+    const rawMs = Math.max(0, now - last);
+    const capMs = Math.max(0, Number(state.offlineRewardCapMs) || 3 * 60 * 60 * 1000);
+    const elapsedMs = Math.min(rawMs, capMs);
+    const days = Math.floor(elapsedMs / marketConfig.candleDurationMs);
+    if(days <= 0) return;
+
+    offlineRunning = true;
+    const beforeCash = Number(state.cash)||0;
+    const beforeValue = Number(state.companyValue)||0;
+    const beforeDay = Number(state.gameDay)||1;
+    let beforeFactories = operatingFactories().length;
+    const oldLastProcessed = Number(state.lastFactoryDayProcessed)||0;
+    try{
+      // 닫히기 직전 진행 중이던 캔들이 있으면 먼저 확정하고, 이후 오프라인 날짜를 빠르게 진행합니다.
+      if(state.price > 0 && state.activeCandle && isRealCandle(state.activeCandle)){
+        closeCandle(state.dayStartedAt + marketConfig.marketOpenMs);
+      }
+      for(let i=0;i<days;i++){
+        simulateOfflineMarketDay();
+        processFactoryDayClose();
+        state.gameDay += 1;
+        state.lastFactoryDayProcessed = Math.min(state.lastFactoryDayProcessed, state.gameDay - 1);
+        state.afterMarketTouches = 0;
+        state.overnightHeat = 0;
+        state.touchHeat *= 0.88;
+        state.buyPressure *= 0.86;
+        state.idlePressure = clamp((Number(state.idlePressure)||0) + 0.12, 0, 60);
+      }
+    }finally{
+      offlineRunning = false;
+    }
+    const remainder = elapsedMs % marketConfig.candleDurationMs;
+    state.dayStartedAt = now - remainder;
+    state.activeCandle = null;
+    state.candleStartedAt = state.dayStartedAt;
+    state.lastFactoryDayProcessed = Math.max(oldLastProcessed, state.lastFactoryDayProcessed);
+    const gained = Math.max(0, Math.floor((Number(state.cash)||0) - beforeCash));
+    const valueGain = Math.max(0, Math.floor((Number(state.companyValue)||0) - beforeValue));
+    const newFactories = Math.max(0, operatingFactories().length - beforeFactories);
+    const cappedText = rawMs > capMs ? ' · 최대 3시간치만 적용' : '';
+    const summary = `오프라인 ${days}일 진행 · 현금 +${fmt(gained)} · 기업가치 +${fmt(valueGain)}${newFactories ? ` · 신규 가동 ${newFactories}개` : ''}${cappedText}`;
+    state.lastOfflineSummary = summary;
+    offlineSummaryToShow = summary;
+    pushFactoryLog(`🌙 ${summary}`);
+    addCommunityComment(gained > 0 ? '상승' : '관망');
+    save();
+  }
+
+  function advanceDayCycle(now=Date.now()){
+    const dayMs = marketConfig.candleDurationMs;
+    if(!Number.isFinite(state.dayStartedAt) || state.dayStartedAt <= 0 || state.dayStartedAt > now + 1000){
+      state.dayStartedAt = now;
+      state.activeCandle = null;
+      state.candleStartedAt = now;
+    }
+
+    let elapsed = now - state.dayStartedAt;
+    if(!Number.isFinite(elapsed) || elapsed < 0){
+      state.dayStartedAt = now;
+      state.activeCandle = null;
+      state.candleStartedAt = now;
+      elapsed = 0;
+    }
+
+    // v2.2 안정화: 저장/오프라인 복귀 뒤 elapsed가 하루 길이를 크게 넘으면
+    // 20일씩 조금씩 따라잡다가 장마감 0초에 묶이는 문제가 생길 수 있어서,
+    // 한 번에 현재 날짜 위치로 보정합니다.
+    if(elapsed >= dayMs){
+      const fullDays = Math.max(1, Math.floor(elapsed / dayMs));
+
+      // 지나간 첫 장중 캔들이 남아 있으면 먼저 확정합니다.
+      if(state.price > 0 && state.activeCandle && isRealCandle(state.activeCandle)){
+        closeCandle(state.dayStartedAt + marketConfig.marketOpenMs);
+      }
+
+      // 너무 오래 밀린 경우에도 멈추지 않도록 상세 처리는 일부만 하고 날짜는 즉시 보정합니다.
+      const detailedDays = Math.min(fullDays, 60);
+      for(let i=0;i<detailedDays;i++){
+        processFactoryDayClose();
+        state.gameDay += 1;
+        state.lastFactoryDayProcessed = Math.min(state.lastFactoryDayProcessed, state.gameDay - 1);
+      }
+      if(fullDays > detailedDays){
+        state.gameDay += (fullDays - detailedDays);
+        state.lastFactoryDayProcessed = Math.min(state.lastFactoryDayProcessed, state.gameDay - 1);
+      }
+
+      state.dayStartedAt += fullDays * dayMs;
+      state.activeCandle = null;
+      state.candleStartedAt = state.dayStartedAt;
+      state.openingGapAppliedDay = Math.min(Number(state.openingGapAppliedDay)||0, state.gameDay - 1);
+      elapsed = now - state.dayStartedAt;
+    }
+
+    const phase = marketPhase(now);
+    if(state.price > 0){
+      if(phase.open){
+        if(!state.activeCandle || !isRealCandle(state.activeCandle)){
+          const gapPct = applyOpeningGapIfNeeded(now);
+          const openingVol = Math.max(0, Math.floor(Number(state.pendingOpeningVolume)||0));
+          state.activeCandle = {o:state.price,h:state.price,l:state.price,c:state.price,v:openingVol,gapPct};
+          state.pendingOpeningVolume = 0;
+          state.candleStartedAt = state.dayStartedAt;
+        }
+      } else {
+        if(state.activeCandle && isRealCandle(state.activeCandle)){
+          closeCandle(state.dayStartedAt + marketConfig.marketOpenMs);
+        }else{
+          state.activeCandle = null;
+        }
+        processFactoryDayClose();
+      }
+    }
+    return marketPhase(now);
+  }
+  function isMarketOpen(now=Date.now()){
+    return advanceDayCycle(now).open;
+  }
+
+  function updateMarketClock(now=Date.now()){
+    const clock = $('marketClock');
+    const text = $('marketClockText');
+    if(!clock || !text) return;
+    const ph = advanceDayCycle(now);
+    const phaseDuration = ph.open ? marketConfig.marketOpenMs : marketConfig.marketCloseMs;
+    const elapsedInPhase = ph.open ? ph.elapsed : Math.max(0, ph.elapsed - marketConfig.marketOpenMs);
+    const pct = clamp((elapsedInPhase / Math.max(1, phaseDuration)) * 100, 0, 100);
+    clock.style.setProperty('--p', pct.toFixed(2));
+    clock.classList.toggle('closed', !ph.open);
+    clock.classList.toggle('open', ph.open);
+    text.textContent = Math.ceil(ph.left / 1000);
+    clock.title = ph.open ? `장중 ${Math.ceil(ph.left/1000)}초 남음` : `장마감 ${Math.ceil(ph.left/1000)}초 남음`;
+  }
+
+  function load(){
+    try{
+      const saved = localStorage.getItem('indi_factory_stock_v01');
+      if(saved){
+        const parsed = JSON.parse(saved);
+        const merged = {...defaultState, ...parsed};
+        merged.lastSavedAt = Number(parsed.lastSavedAt || parsed.lastSave || Date.now());
+        return merged;
+      }
+    }catch(e){}
+    return structuredClone(defaultState);
+  }
+  function save(){
+    const now = Date.now();
+    state.lastSave = now;
+    state.lastSavedAt = now;
+    localStorage.setItem('indi_factory_stock_v01', JSON.stringify(state));
+  }
+  function reset(){
+    if(confirm('정말 초기화할까요?')){
+      localStorage.removeItem('indi_factory_stock_v01');
+      state = structuredClone(defaultState);
+      state.lastSavedAt = Date.now();
+      state.lastSave = Date.now();
+      state.dayStartedAt = Date.now();
+      log('초기화 완료. 다시 0원 회사부터 시작합니다.');
+      updateAll();
+    }
+  }
+
+
+  function setAdminSpeed(speed){
+    const next = clamp(Number(speed)||1, 1, 20);
+    state.adminSpeed = next;
+    lastAdminSpeedAt = Date.now();
+    log(`관리자 진행속도 x${next} 적용`);
+    showFactoryNews(`관리자 리모컨 · 진행속도 x${next}`, next > 1 ? 'good' : 'info');
+    save();
+    updateAll();
+  }
+
+  function adminAddMoney(){
+    state.cash += 10000000;
+    state.companyValue += 250000;
+    state.sentiment += 6;
+    state.eventHeat += 5;
+    addTradeVolume(60);
+    addCommunityComment('기쁨');
+    log('관리자 리모컨 · 현금 ₩ 10,000,000 지급');
+    showFactoryNews('관리자 리모컨 · 현금 ₩ 10,000,000 지급', 'good');
+    save();
+    updateAll();
+  }
+
+  function adminAdvanceDays(days){
+    const count = clamp(Math.floor(Number(days)||1), 1, 365);
+    for(let i=0;i<count;i++){
+      if(state.price > 0 && state.activeCandle && isRealCandle(state.activeCandle)){
+        closeCandle(state.dayStartedAt + marketConfig.marketOpenMs);
+      }else if(state.price > 0){
+        simulateOfflineMarketDay();
+      }
+      processFactoryDayClose();
+      state.gameDay += 1;
+      state.lastFactoryDayProcessed = Math.min(state.lastFactoryDayProcessed, state.gameDay - 1);
+      state.afterMarketTouches = 0;
+      state.overnightHeat = 0;
+      state.touchHeat *= 0.86;
+      state.buyPressure *= 0.84;
+      state.idlePressure = clamp((Number(state.idlePressure)||0) + 0.2, 0, 80);
+      state.activeCandle = null;
+    }
+    state.dayStartedAt = Date.now();
+    state.candleStartedAt = state.dayStartedAt;
+    state.openingGapAppliedDay = Math.min(Number(state.openingGapAppliedDay)||0, state.gameDay - 1);
+    log(`관리자 리모컨 · ${count}일 빠르게 진행`);
+    showFactoryNews(`관리자 리모컨 · ${count}일 빠르게 진행`, 'info');
+    save();
+    updateAll();
+  }
+
+  function syncAdminRemote(){
+    const speed = clamp(Number(state.adminSpeed)||1, 1, 20);
+    const info = $('adminSpeedInfo');
+    if(info) info.textContent = `진행속도 x${speed}`;
+    [['adminSpeed1Btn',1],['adminSpeed5Btn',5],['adminSpeed20Btn',20]].forEach(([id,val])=>{
+      const btn = $(id);
+      if(btn) btn.classList.toggle('active', speed === val);
+    });
+  }
+
+  function isRealCandle(c){
+    if(!c) return false;
+    return (Number(c.o)||0) > 0 || (Number(c.h)||0) > 0 || (Number(c.l)||0) > 0 || (Number(c.c)||0) > 0 || (Number(c.v)||0) > 0;
+  }
+
+  function initCandles(){
+    if(!Array.isArray(state.candles)) state.candles = [];
+    state.candles = state.candles.filter(isRealCandle);
+    if(!Number.isFinite(state.dayStartedAt) || state.dayStartedAt <= 0) state.dayStartedAt = Date.now();
+    if(!Number.isFinite(state.gameDay) || state.gameDay < 1) state.gameDay = 1;
+    const phase = marketPhase(Date.now());
+    if(state.price > 0 && phase.open){
+      if(!state.activeCandle || !isRealCandle(state.activeCandle)){
+        const gapPct = applyOpeningGapIfNeeded(Date.now());
+        const openingVol = Math.max(0, Math.floor(Number(state.pendingOpeningVolume)||0));
+        state.activeCandle = {o:state.price,h:state.price,l:state.price,c:state.price,v:openingVol,gapPct};
+        state.pendingOpeningVolume = 0;
+        state.candleStartedAt = state.dayStartedAt;
+      }
+    } else if(state.price <= 0) {
+      state.activeCandle = null;
+    }
+    if(!Number.isFinite(state.candleStartedAt) || state.candleStartedAt <= 0) state.candleStartedAt = Date.now();
+  }
+
+  function normalizeFactories(){
+    if(!Array.isArray(state.factories)) state.factories = [];
+    if(!Array.isArray(state.factoryLog)) state.factoryLog = [];
+    const oldCount = Math.max(0, Math.floor(Number(state.factoryLevel)||0));
+    while(state.factories.length < oldCount && state.factories.length < factoryMaxSlots){
+      const idx = state.factories.length;
+      const spec = getSpec(idx);
+      state.factorySeq++;
+      state.factories.push({id:state.factorySeq, type:idx, name:spec.name, item:spec.item, icon:spec.icon, status:'operating', made:0, defects:0, lastGain:0, pulse:0, workers:1, lines:1});
+    }
+    state.factories = state.factories.slice(0, factoryMaxSlots).map((f,i)=>{
+      const type = Number.isFinite(Number(f.type)) ? Number(f.type) : i;
+      const spec = getSpec(type);
+      const status = f.status || 'operating';
+      const total = Number(f.stageTotalDays) || Number(spec[status]) || 0;
+      const cost = Number.isFinite(Number(f.cost)) ? Number(f.cost) : factoryCost(type);
+      const paid = Math.max(0, Math.min(cost, Number(f.paid)||0));
+      return {...f,
+        id:f.id || (i+1),
+        type,
+        status,
+        name:f.name || spec.name,
+        item:f.item || spec.item,
+        icon:f.icon || spec.icon,
+        cost,
+        paid,
+        workers:Math.max(1, Math.floor(Number(f.workers)||1)),
+        lines:Math.max(1, Math.floor(Number(f.lines)||1)),
+        made:Number(f.made)||0,
+        defects:Number(f.defects)||0,
+        lastGain:Number(f.lastGain)||0,
+        pulse:Number(f.pulse)||0,
+        daysLeft: status === 'operating' ? 0 : Math.max(0, Number(f.daysLeft)||total||1),
+        stageTotalDays: status === 'operating' ? 0 : Math.max(1, total||1)
+      };
+    });
+    if(state.selectedFactoryId !== null && !state.factories.some(f=>Number(f.id) === Number(state.selectedFactoryId) && f.status === 'operating')){
+      state.selectedFactoryId = null;
+    }
+    state.factoryLevel = state.factories.filter(f=>f.status === 'operating').length;
+  }
+
+  function factoryCost(index=state.factories.length){
+    index = Math.max(0, Math.floor(Number(index)||0));
+    const spec = getSpec(index);
+    return Math.floor(Number(spec.cost) || (1000000 * Math.pow(3.2, index)));
+  }
+
+  function factoryStartCost(index=state.factories.length){
+    const total = factoryCost(index);
+    return Math.max(10000, Math.floor(total * 0.10));
+  }
+
+  function factoryRemainingCost(factory){
+    const total = Number(factory.cost) || factoryCost(factory.type);
+    const paid = Number(factory.paid)||0;
+    return Math.max(0, Math.floor(total - paid));
+  }
+
+  function factoryCostProgress(factory){
+    const total = Math.max(1, Number(factory.cost)||factoryCost(factory.type));
+    return clamp((Number(factory.paid)||0) / total, 0, 1);
+  }
+
+  function factoryCapacityMultiplier(factory){
+    const workers = Math.max(1, Math.floor(Number(factory.workers)||1));
+    const lines = Math.max(1, Math.floor(Number(factory.lines)||1));
+    return 1 + (workers - 1) * 0.26 + (lines - 1) * 0.78 + Math.min(0.35, workers * lines * 0.012);
+  }
+
+  function factoryDailyOutput(factory){
+    const spec = getSpec(factory.type);
+    const qualityBonus = 1 + Math.min(.45, state.rndLevel * .035);
+    return Math.max(10, Math.floor((spec.output || 10) * factoryCapacityMultiplier(factory) * qualityBonus));
+  }
+
+  function factoryDefectChance(factory){
+    const spec = getSpec(factory.type);
+    const workers = Math.max(1, Math.floor(Number(factory.workers)||1));
+    const lines = Math.max(1, Math.floor(Number(factory.lines)||1));
+    const understaff = Math.max(0, lines - workers * 0.75) * .012;
+    const experience = Math.min(.035, (Number(factory.made)||0) * .00006);
+    return clamp((spec.defect || .1) - state.rndLevel * .006 - experience + state.overheat * .0015 + understaff, .025, .32);
+  }
+
+  function factoryWorkerCost(factory){
+    const spec = getSpec(factory.type);
+    const workers = Math.max(1, Math.floor(Number(factory.workers)||1));
+    return Math.floor((45000 + (spec.output||1000) * 0.16) * Math.pow(1.34, workers - 1));
+  }
+
+  function factoryLineCost(factory){
+    const spec = getSpec(factory.type);
+    const lines = Math.max(1, Math.floor(Number(factory.lines)||1));
+    return Math.floor((180000 + (Number(factory.cost)||spec.cost||1000000) * 0.055) * Math.pow(1.48, lines - 1));
+  }
+
+  function getFactoryById(id){
+    normalizeFactories();
+    return state.factories.find(f=>Number(f.id) === Number(id));
+  }
+
+  function openFactoryDetail(id){
+    const f = getFactoryById(id);
+    if(!f || f.status !== 'operating') return;
+    state.selectedFactoryId = Number(f.id);
+    updateAll();
+  }
+
+  function closeFactoryDetail(){
+    state.selectedFactoryId = null;
+    updateAll();
+  }
+
+  function upgradeFactoryWorkers(){
+    const f = getFactoryById(state.selectedFactoryId);
+    if(!f || f.status !== 'operating') return;
+    const cost = factoryWorkerCost(f);
+    if(state.cash < cost){
+      showFactoryNews(`${f.name} 근로자 채용 자금 부족 · 추가 ${fmt(cost - state.cash)} 필요`, 'bad');
+      log(`근로자 채용 자금 부족 · ${fmt(cost)} 필요`);
+      updateAll();
+      return;
+    }
+    state.cash -= cost;
+    f.workers = Math.max(1, Math.floor(Number(f.workers)||1)) + 1;
+    state.companyValue += cost * 0.16;
+    state.sentiment += 2.5;
+    state.eventHeat += 3.5;
+    addTradeVolume(10 + f.workers * 2);
+    showFactoryNews(`${f.name} 근로자 ${f.workers}명으로 증원 · 생산 안정성 개선`, 'good');
+    pushFactoryLog(`👷 DAY ${state.gameDay} ${f.name} 근로자 증원 · ${f.workers}명`);
+    maybeCommunity('상승', .55);
+    updateAll();
+  }
+
+  function upgradeFactoryLines(){
+    const f = getFactoryById(state.selectedFactoryId);
+    if(!f || f.status !== 'operating') return;
+    const cost = factoryLineCost(f);
+    if(state.cash < cost){
+      showFactoryNews(`${f.name} 생산라인 증설 자금 부족 · 추가 ${fmt(cost - state.cash)} 필요`, 'bad');
+      log(`생산라인 증설 자금 부족 · ${fmt(cost)} 필요`);
+      updateAll();
+      return;
+    }
+    state.cash -= cost;
+    f.lines = Math.max(1, Math.floor(Number(f.lines)||1)) + 1;
+    state.companyValue += cost * 0.24;
+    state.sentiment += 4;
+    state.eventHeat += 7;
+    state.overheat += 1.2;
+    addTradeVolume(20 + f.lines * 6);
+    simulateMarketBurst(2, 16 + f.lines * 2);
+    showFactoryNews(`${f.name} 생산라인 ${f.lines}라인으로 증설 · 생산능력 확대`, 'good');
+    pushFactoryLog(`🏗️ DAY ${state.gameDay} ${f.name} 생산라인 증설 · ${f.lines}라인`);
+    maybeCommunity('급등', .65);
+    updateAll();
+  }
+
+  function pushFactoryLog(text){
+    if(!Array.isArray(state.factoryLog)) state.factoryLog = [];
+    state.factoryLog.unshift(text);
+    while(state.factoryLog.length > 12) state.factoryLog.pop();
+  }
+
+  function showFactoryNews(text, tone='info'){
+    if(offlineRunning){
+      if(text) state.lastOfflineSummary = String(text);
+      return;
+    }
+    const el = $('factoryNewsToast');
+    if(!el || !text) return;
+    clearTimeout(factoryToastTimer);
+    el.className = `factoryNewsToast ${tone} show`;
+    const icon = tone === 'good' ? '📈' : tone === 'bad' ? '📉' : '🏭';
+    el.innerHTML = `<span>${icon}</span><span>${text}</span>`;
+    factoryToastTimer = setTimeout(()=>{ el.classList.remove('show'); }, 1700);
+  }
+
+  function applyFactoryEventImpact(factory, headline, opt={}){
+    const spec = getSpec(factory && factory.type);
+    const pct = Number(opt.pct) || 0;
+    const heat = Number(opt.heat) || 0;
+    const sentiment = Number(opt.sentiment) || 0;
+    const volume = Number(opt.volume) || 0;
+    const tone = opt.tone || (pct < 0 ? 'bad' : pct > 0 ? 'good' : 'info');
+    state.eventHeat += heat;
+    state.sentiment += sentiment;
+    state.interest += Math.max(0, sentiment) * 0.35 + Math.max(0, heat) * 0.08;
+    if(factory && spec){
+      state.companyValue += Math.max(0, (Number(factory.cost)||spec.cost||0) * (Number(opt.valueRate)||0));
+    }
+    if(volume) addTradeVolume(Math.max(1, Math.floor(volume)));
+    if(pct > 0) state.overheat += pct * 12;
+    if(pct < 0) state.overheat = Math.max(0, state.overheat + pct * 4);
+    if(state.price <= 0){
+      state.interest += Math.abs(pct) * 80 + 4;
+      state.eventHeat += Math.abs(pct) * 24;
+      firstTradeIfReady();
+    }
+    if(state.price > 0 && pct !== 0){
+      const jitter = 0.86 + Math.random() * 0.28;
+      movePrice(state.price * pct * jitter);
+    }else if(state.price > 0){
+      simulateMarketBurst(2, Math.max(4, heat + volume * .15));
+    }
+    showFactoryNews(headline, tone);
+    if(headline && factory){
+      addCommunityComment(tone === 'bad' ? '공장악재' : '공장이벤트', {force:true});
+    }
+    if(opt.comment) addCommunityComment(opt.comment);
+  }
+
+  function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+
+  function pruneTouchTimes(now=Date.now()){
+    if(!Array.isArray(state.touchTimes)) state.touchTimes = [];
+    const limit = now - marketConfig.touchWindowMs;
+    state.touchTimes = state.touchTimes.filter(t => Number.isFinite(t) && t >= limit);
+    if(state.touchTimes.length > 420) state.touchTimes = state.touchTimes.slice(-420);
+    return state.touchTimes.length;
+  }
+
+  function recentTouchCount(now=Date.now()){
+    return pruneTouchTimes(now);
+  }
+
+  function touchStateName(){
+    const recent = recentTouchCount();
+    if(state.externalSellPressure > 34 || state.idlePressure > 32) return '실망매물';
+    if(state.marketAttention > 85 && state.externalBuyPressure > state.externalSellPressure + 12) return '외부관심';
+    if(recent >= 180 || state.touchHeat >= 135) return '폭주';
+    if(recent >= 110 || state.touchHeat >= 95) return '광기';
+    if(recent >= 60 || state.touchHeat >= 55) return '개미몰림';
+    if(recent >= 25 || state.touchHeat >= 25) return '매수세';
+    if(recent > 0 || state.touchHeat >= 8) return '관심발생';
+    return '조용함';
+  }
+
+  function updateTouchPressure(now=Date.now()){
+    const recent = recentTouchCount(now);
+    const dt = clamp((now - lastPressureUpdateAt) / 1000, 0, 4);
+    lastPressureUpdateAt = now;
+    if(dt <= 0) return recent;
+
+    const idleMs = state.lastTouchAt ? now - state.lastTouchAt : 999999;
+    const active = recent > 0 && idleMs <= marketConfig.touchActiveGraceMs;
+
+    // 광클의 열기는 바로 사라지지 않고, 10~30초 정도 잔상처럼 남습니다.
+    const heatDecayPerSec = active ? 0.945 : 0.82;
+    const pressureDecayPerSec = active ? 0.935 : 0.78;
+    state.touchHeat *= Math.pow(heatDecayPerSec, dt);
+    state.buyPressure *= Math.pow(pressureDecayPerSec, dt);
+
+    // 광클로 끌어올린 분위기가 갑자기 식으면 실망 매도 압력이 생깁니다.
+    if(!active && state.touchPeak > 18 && idleMs > 1800){
+      const disappointmentGain = clamp((state.touchPeak - recent) * 0.035, 0, 4.8) * dt;
+      state.idlePressure = clamp(state.idlePressure + disappointmentGain, 0, marketConfig.idlePressureMax);
+      state.touchPeak *= Math.pow(0.86, dt);
+      if(state.idlePressure > 24 && Math.random() < 0.07 * dt) maybeCommunity('탄식', .9);
+    } else {
+      state.idlePressure *= Math.pow(0.72, dt);
+      state.touchPeak = Math.max(state.touchPeak * Math.pow(0.94, dt), recent);
+    }
+
+    state.touchHeat = clamp(state.touchHeat, 0, marketConfig.touchHeatMax);
+    state.buyPressure = clamp(state.buyPressure, 0, marketConfig.buyPressureMax);
+    state.idlePressure = clamp(state.idlePressure, 0, marketConfig.idlePressureMax);
+    return recent;
+  }
+
+
+  function updateExternalMarket(now=Date.now(), phase=marketPhase(now), recentTaps=recentTouchCount(now)){
+    if(!Number.isFinite(state.lastExternalUpdateAt)) state.lastExternalUpdateAt = now;
+    const dt = clamp((now - state.lastExternalUpdateAt) / 1000, 0, 4);
+    state.lastExternalUpdateAt = now;
+    if(dt <= 0) return;
+
+    const idleMs = state.lastTouchAt ? now - state.lastTouchAt : 999999;
+    const activeTouch = recentTaps > 0 && idleMs <= marketConfig.touchActiveGraceMs;
+
+    // 터치로 만든 불씨는 바로 꺼지지 않고 며칠 동안 남습니다.
+    state.marketAttention *= Math.pow(activeTouch ? marketConfig.attentionDecayActive : marketConfig.attentionDecayIdle, dt);
+    state.externalBuyPressure *= Math.pow(activeTouch ? marketConfig.externalBuyDecayActive : marketConfig.externalBuyDecayIdle, dt);
+    state.externalVolumeHeat *= Math.pow(marketConfig.externalVolumeDecay, dt);
+
+    // 터치를 멈추면 관심은 남아 있지만 방향이 점점 매도 쪽으로 기웁니다.
+    if(!activeTouch && idleMs > marketConfig.idleSellStartMs && state.marketAttention > 5){
+      const idleDays = idleMs / marketConfig.candleDurationMs;
+      const sellGain = (state.marketAttention * 0.014 + state.idlePressure * 0.025 + Math.min(12, idleDays * 0.9)) * dt;
+      state.externalSellPressure = clamp(state.externalSellPressure + sellGain, 0, marketConfig.externalSellMax);
+      if(idleMs > marketConfig.idleDisappointmentStartMs){
+        state.sentiment -= Math.min(0.55, (state.externalSellPressure + state.idlePressure) * 0.0025) * dt;
+      }
+    }else{
+      state.externalSellPressure *= Math.pow(marketConfig.externalSellDecayActive, dt);
+    }
+
+    // 관심이 높으면 내가 가만히 있어도 외부 투자자 거래가 생깁니다.
+    if(phase.open && state.price > 0){
+      const externalFlow = Math.max(0,
+        state.marketAttention * 0.050 +
+        state.externalVolumeHeat * marketConfig.externalVolumeTradeRate +
+        (state.externalBuyPressure + state.externalSellPressure) * 0.032 +
+        Math.random() * 3 - 1.2
+      ) * dt;
+      if(externalFlow >= 0.8){
+        addTradeVolume(Math.floor(externalFlow));
+      }
+    }
+
+    state.marketAttention = clamp(state.marketAttention, 0, marketConfig.marketAttentionMax);
+    state.externalBuyPressure = clamp(state.externalBuyPressure, 0, marketConfig.externalBuyMax);
+    state.externalSellPressure = clamp(state.externalSellPressure, 0, marketConfig.externalSellMax);
+    state.externalVolumeHeat = clamp(state.externalVolumeHeat, 0, marketConfig.externalVolumeMax);
+  }
+
+  function earlyCandleBarsCount(){
+    let count = Array.isArray(state.candles) ? state.candles.filter(isRealCandle).length : 0;
+    if(state.activeCandle && isRealCandle(state.activeCandle)) count += 1;
+    return count;
+  }
+
+  function isEarlyCommunityPeriod(){
+    return earlyCandleBarsCount() < 30;
+  }
+
+  function earlyCommunityMode(){
+    const count = earlyCandleBarsCount();
+    const r = Math.random();
+    if(state.price <= 0 || count < 5){
+      if(r < .72) return '초기관심';
+      if(r < .94) return '잡담';
+      return '거래없음';
+    }
+    if(r < .58) return '초기관심';
+    if(r < .90) return '잡담';
+    return '거래없음';
+  }
+
+  function communityIntervalMs(){
+    const recentVol = state.activeCandle ? Number(state.activeCandle.v)||0 : Number(state.todayVolume)||0;
+    // 댓글은 터치 속도가 아니라 거래량 기준으로만 움직입니다.
+    // v3.6: 조용한 장은 훨씬 천천히, 거래량 폭발 때만 빨라지게 완화했습니다.
+    // 잠잠함: 7~8초 / 보통: 4~6초 / 활발: 2~3초 / 폭발: 0.9~1.4초
+    let interval = 7800;
+    if(recentVol >= 2800){
+      interval = 900;
+    }else if(recentVol >= 1600){
+      interval = 1400;
+    }else if(recentVol >= 900){
+      interval = 2200;
+    }else if(recentVol >= 420){
+      interval = 3400;
+    }else if(recentVol >= 160){
+      interval = 5200;
+    }
+    return interval;
+  }
+
+  function driveCommunityByVolume(now=Date.now()){
+    if(!Array.isArray(state.comments)) state.comments = [];
+    if(now - (state.lastCommentAt || 0) < communityIntervalMs()) return;
+    const recentVol = state.activeCandle ? Number(state.activeCandle.v)||0 : Number(state.todayVolume)||0;
+    const idleMs = state.lastTouchAt ? now - state.lastTouchAt : 999999;
+    let reason = null;
+    let chance = .20;
+    if(!isEarlyCommunityPeriod() && state.externalSellPressure > 30 && idleMs > marketConfig.idleSellStartMs){
+      reason = '실망매물';
+      chance = .78;
+    }else if(!isEarlyCommunityPeriod() && state.marketAttention > 52 && state.externalBuyPressure > state.externalSellPressure + 8){
+      reason = '외부관심';
+      chance = .62;
+    }else if(!isEarlyCommunityPeriod() && idleMs > 15000 && recentVol < 28){
+      reason = '정체';
+      chance = .88;
+    }else if(recentVol >= 1800){
+      reason = null;
+      chance = .72;
+    }else if(recentVol >= 700){
+      reason = null;
+      chance = .48;
+    }else if(recentVol >= 160){
+      reason = null;
+      chance = .28;
+    }
+    maybeCommunity(reason, chance);
+  }
+
+  function communityMode(reason){
+    if(reason === '공장이벤트' || reason === '공장악재') return reason;
+    if(isEarlyCommunityPeriod()) return earlyCommunityMode();
+    if(reason) return reason;
+    const chg = state.prevClose > 0 ? ((state.price - state.prevClose) / state.prevClose) * 100 : 0;
+    const recentVol = state.activeCandle ? Number(state.activeCandle.v)||0 : 0;
+    const recentTaps = recentTouchCount();
+    const idleMs = state.lastTouchAt ? Date.now() - state.lastTouchAt : 999999;
+    const earlyMarket = (state.gameDay <= 4 || (state.price > 0 && state.price < 80 && state.interest < 45));
+    if(state.price <= 0) return Math.random() < .68 ? '초기관심' : '잡담';
+    if(earlyMarket && Math.random() < .34) return Math.random() < .72 ? '초기관심' : '잡담';
+    if(idleMs > 15000 && recentVol < 28 && Math.abs(chg) < 2.0) return '정체';
+    if(state.externalSellPressure > 34 && idleMs > marketConfig.idleSellStartMs) return Math.random() < .58 ? '실망매물' : '탄식';
+    if(state.marketAttention > 55 && state.externalBuyPressure > state.externalSellPressure + 8) return Math.random() < .58 ? '외부관심' : '대량매수';
+    if(state.idlePressure > 34 && chg <= 0) return Math.random() < .45 ? '탄식' : '하락';
+    if(recentTaps > 120 || state.touchHeat > 110) return Math.random() < .55 ? '과열' : '대량매수';
+    if(recentTaps > 55 || state.buyPressure > 28) return Math.random() < .5 ? '대량매수' : '상승';
+    if(state.sentiment < -28 && chg < 0) return '분노';
+    if(chg >= 10 || state.eventHeat > 48) return '급등';
+    if(chg <= -10 || state.sentiment < -18) return '폭락';
+    if(recentVol > 55 && state.sentiment > 10) return '대량매수';
+    if(recentVol > 30 && state.sentiment < -4) return '대량매도';
+    if(state.sentiment + state.eventHeat * .22 > 46) return '과열';
+    if(chg >= 2.2) return Math.random() < .35 ? '기쁨' : '상승';
+    if(chg <= -2.2) return Math.random() < .35 ? '탄식' : '하락';
+    return '관망';
+  }
+
+  function commentClass(mode){
+    if(['급등','상승','대량매수','외부관심','공장이벤트'].includes(mode)) return 'upMood';
+    if(['폭락','하락','대량매도','탄식','정체','실망매물','공장악재'].includes(mode)) return 'downMood';
+    if(['분노'].includes(mode)) return 'angerMood';
+    if(['기쁨','과열'].includes(mode)) return 'happyMood';
+    return '';
+  }
+
+  function addCommunityComment(reason, opt={}){
+    if(!Array.isArray(state.comments)) state.comments = [];
+    const now = Date.now();
+    const force = !!(opt && opt.force);
+    if(!force && now - (state.lastCommentAt || 0) < communityIntervalMs()) return false;
+    const mode = communityMode(reason);
+    const parts = commentParts[mode] || commentParts.관망;
+    let text = '';
+    if(parts.lines && parts.lines.length && Math.random() < .82){
+      text = pick(parts.lines);
+    } else {
+      const intro = parts.intros && Math.random() < .55 ? pick(parts.intros) + ' ' : '';
+      text = `${intro}${pick(parts.subjects)} ${pick(parts.reactions)} ${pick(parts.endings)}`.replace(/\s+/g,' ').trim();
+    }
+    const comment = { nick: pick(nicknames), mode, text, at: Date.now() };
+    state.comments.unshift(comment);
+    state.lastCommentAt = now;
+    while(state.comments.length > 100) state.comments.pop();
+    updateHomeLivePost(comment);
+    return true;
+  }
+
+  function maybeCommunity(reason, chance=.35){
+    if(Math.random() < chance) return addCommunityComment(reason);
+    return false;
+  }
+
+  function ensureCommunitySeed(){
+    if(!Array.isArray(state.comments)) state.comments = [];
+    if(state.comments.length === 0){
+      const seeds = isEarlyCommunityPeriod()
+        ? ['초기관심','잡담','초기관심','잡담','거래없음','초기관심','잡담']
+        : (state.price > 0
+          ? ['관망','잡담','초기관심','관망','잡담']
+          : ['초기관심','잡담','초기관심','잡담','거래없음','초기관심','잡담']);
+      seeds.forEach(mode=>addCommunityComment(mode, {force:true}));
+    }
+  }
+
+  function updateHomeLivePost(comment){
+    const box = $('homeLivePost');
+    const text = $('homeLiveText');
+    if(!box || !text) return;
+    const c = comment || (state.comments && state.comments[0]);
+    box.className = 'livePost';
+    if(!c){
+      text.textContent = '실시간 종목토론 대기 중';
+      return;
+    }
+    const cls = commentClass(c.mode || '관망');
+    if(cls) box.classList.add(cls);
+    text.textContent = `${c.nick || '익명개미'}: ${c.text || ''}`;
+  }
+
+  function scrollCommunityTop(){
+    const feedEl = $('communityFeed');
+    if(!feedEl) return;
+    requestAnimationFrame(()=>{ feedEl.scrollTop = 0; });
+  }
+
+  function updateCommunity(){
+    const moodEl = $('communityMood');
+    const feedEl = $('communityFeed');
+    updateHomeLivePost();
+    if(!moodEl || !feedEl) return;
+    const mode = communityMode();
+    moodEl.textContent = `현재 분위기: ${mode}`;
+    const list = (state.comments || []).slice(0, 24);
+    feedEl.innerHTML = list.map(c=>`<div class="comment ${commentClass(c.mode || '관망')}"><div class="commentTop"><span class="commentNick">${c.nick || '익명개미'}</span><span class="commentMode">${c.mode || '관망'}</span></div><p>${c.text || ''}</p></div>`).join('') || '<div class="comment"><p>아직 댓글이 없습니다. 터치해서 시장을 깨워보세요.</p></div>';
+  }
+
+  function addTradeVolume(v){
+    state.volume += v;
+    state.todayVolume += v;
+    if(state.activeCandle) state.activeCandle.v += v;
+  }
+
+  function firstTradeIfReady(){
+    if(state.price > 0) return true;
+    if(state.interest >= 10 || state.companyValue >= 40 || state.eventHeat >= 15){
+      state.price = 1;
+      state.prevClose = 0;
+      state.candles = [];
+      if(isMarketOpen()){
+        state.activeCandle = {o:1,h:1,l:1,c:1,v:0};
+        state.candleStartedAt = state.dayStartedAt;
+      } else {
+        state.activeCandle = null;
+        state.candleStartedAt = Date.now();
+      }
+      chartOffset = 0;
+      log('첫 거래 발생! 내 회사 주가가 ₩1로 시작했습니다.');
+      addCommunityComment('거래없음');
+      return true;
+    }
+    return false;
+  }
+
+  function fundamentalPrice(){
+    const productionBase = Math.max(0, state.companyValue) * 0.035;
+    const salesBase = Math.max(0, state.revenue) * 0.004;
+    const attentionBase = Math.max(0, state.interest) * marketConfig.interestToValue;
+    const factoryBase = state.factoryLevel * marketConfig.factoryValueBonus;
+    const rndBase = state.rndLevel * marketConfig.rndValueBonus;
+    return Math.max(1, productionBase + salesBase + attentionBase + factoryBase + rndBase);
+  }
+
+  function targetMarketPrice(){
+    const base = fundamentalPrice();
+    const expectation = Math.max(-45, state.sentiment) * 0.25
+      + state.eventHeat * 0.42
+      + state.buyPressure * 0.18
+      + state.externalBuyPressure * 0.16
+      + state.marketAttention * 0.045
+      + state.touchHeat * 0.06
+      - state.externalSellPressure * 0.24
+      - state.idlePressure * 0.22;
+    const penalty = state.overheat * marketConfig.overheatPenalty;
+    return Math.max(1, base + expectation - penalty);
+  }
+
+  function applyPrice(newPrice, extraVolume=0){
+    // 가격이 움직이는 순간에도 10초 봉이 지났으면 먼저 새 봉으로 넘깁니다.
+    // 이렇게 해야 광클 중에도 한 봉이 그 자리에서 계속 늘어지지 않습니다.
+    if(state.price > 0) rollCandleIfNeeded(Date.now());
+    const old = state.price;
+    state.price = Math.max(1, newPrice);
+    const diff = state.price - old;
+    const moveVol = Math.max(0, Math.floor(Math.abs(diff) * marketConfig.volumeByMove + extraVolume));
+    if(moveVol > 0) addTradeVolume(moveVol);
+    if(state.activeCandle){
+      state.activeCandle.h = Math.max(state.activeCandle.h, state.price);
+      state.activeCandle.l = Math.min(state.activeCandle.l, state.price);
+      state.activeCandle.c = state.price;
+    }
+    if(old > 0 && diff !== 0){
+      const pctMove = (diff / Math.max(1, old)) * 100;
+      const gapMs = Date.now() - (state.lastCommentAt || 0);
+      if(gapMs > 900){
+        if(pctMove >= 4 && Math.random() < .55) addCommunityComment('급등');
+        else if(pctMove <= -4 && Math.random() < .55) addCommunityComment('폭락');
+        else if(pctMove > 0 && Math.random() < .14) addCommunityComment(Math.random() < .25 ? '기쁨' : '상승');
+        else if(pctMove < 0 && Math.random() < .18) addCommunityComment(Math.random() < .35 ? '탄식' : '하락');
+      }
+    }
+  }
+
+  function marketPriceTick(eventBoost=0){
+    if(!firstTradeIfReady()) return;
+    if(state.price <= 0) return;
+    if(!isMarketOpen()) return;
+
+    const fair = fundamentalPrice();
+    const target = targetMarketPrice();
+    const recentTaps = recentTouchCount();
+    const premium = state.price / Math.max(1, fair);
+    if(premium > marketConfig.overheatLine){
+      state.overheat += (premium - marketConfig.overheatLine) * marketConfig.overheatBuild;
+    } else {
+      state.overheat *= 0.985;
+    }
+
+    let shock = 0;
+    if(state.overheat > 6 && Math.random() < clamp(state.overheat / 85, .06, .33)){
+      shock -= state.price * (0.012 + Math.random() * 0.055);
+      if(Math.random() < .4) maybeCommunity('과열', .8);
+    }
+    if(state.eventHeat > 25 && Math.random() < .08){
+      shock += state.price * (0.01 + Math.random() * 0.05);
+    }
+    if(Math.random() < .025 + state.factoryLevel * .002){
+      shock += (Math.random() - .52) * Math.max(2, state.price * 0.07);
+      addTradeVolume(8 + Math.floor(Math.random() * 28));
+    }
+
+    const gap = target - state.price;
+    const volatility = marketConfig.baseVolatility
+      + state.price * 0.026
+      + Math.abs(state.sentiment) * 0.018
+      + state.eventHeat * 0.018
+      + state.overheat * 0.035
+      + state.touchHeat * 0.012
+      + state.marketAttention * 0.004
+      + (state.externalBuyPressure + state.externalSellPressure) * 0.006
+      + state.idlePressure * 0.014
+      + eventBoost * 0.025;
+    const randomSwing = (Math.random() * 2 - 1) * volatility;
+    const touchDrift = Math.min(9, state.buyPressure * marketConfig.touchPressureDrift + recentTaps * marketConfig.recentTapDrift);
+    const externalDrift = Math.min(8.5, state.externalBuyPressure * 0.030 + state.marketAttention * 0.006);
+    const idleDrag = Math.min(13, state.idlePressure * marketConfig.idleDrift + state.externalSellPressure * 0.040);
+    const drift = gap * marketConfig.targetFollow + state.sentiment * 0.018 + touchDrift + externalDrift - idleDrag + randomSwing + shock;
+    const before = state.price;
+    const heatVolume = Math.floor(state.touchHeat * marketConfig.heatVolumeFactor + recentTaps * 0.18 + state.idlePressure * 0.25 + state.marketAttention * 0.08 + (state.externalBuyPressure + state.externalSellPressure) * 0.09);
+    applyPrice(before + drift, eventBoost + heatVolume + Math.random() * 2);
+
+    const pct = Math.abs(state.price - before) / Math.max(1, before);
+    if(pct > .035) addTradeVolume(Math.floor(10 + pct * 300));
+  }
+
+  function simulateMarketBurst(count=4, eventBoost=0){
+    for(let i=0;i<count;i++) marketPriceTick(eventBoost / Math.max(1,count));
+  }
+
+  function movePrice(delta){
+    if(!firstTradeIfReady()) return;
+    if(state.price <= 0) return;
+    // 매수/매도 같은 직접 주문은 가격에 즉시 충격을 주되, 이후 시장 계산에서 다시 조정됩니다.
+    applyPrice(state.price + delta, Math.max(1, Math.abs(delta) * 1.4));
+  }
+
+  function processFactoryProduction(){
+    // v1.6부터 공장 생산은 매 틱이 아니라 하루 장마감에 정산됩니다.
+    return 0;
+  }
+
+  function marketStep(){
+    advanceDayCycle(Date.now());
+    initCandles();
+    state.tick++;
+
+    const phase = advanceDayCycle(Date.now());
+    const recentTaps = updateTouchPressure(Date.now());
+    updateExternalMarket(Date.now(), phase, recentTaps);
+
+    if(!phase.open){
+      state.sentiment *= 0.965;
+      state.eventHeat *= 0.965;
+      state.interest *= 0.999;
+      state.overheat *= 0.992;
+      if(state.externalSellPressure > 30 && Math.random() < .16) maybeCommunity('실망매물', .62);
+      else if(state.tick % 4 === 0 && state.price > 0) maybeCommunity('관망', .32);
+      if(Date.now() - state.lastSave > 2500){ save(); state.lastSave = Date.now(); }
+      updateAll();
+      return;
+    }
+
+    const touchBoost = Math.min(42, state.touchHeat * 0.22 + state.buyPressure * 0.18 + recentTaps * 0.08);
+
+    if(recentTaps >= 80){
+      state.eventHeat += 0.18;
+      state.overheat += 0.035;
+      if(Math.random() < .09) maybeCommunity(recentTaps >= 150 ? '과열' : '대량매수', .9);
+    }
+    if((state.idlePressure > 22 || state.externalSellPressure > 24) && Math.random() < .13){
+      state.sentiment -= 1.4 + Math.min(1.2, state.externalSellPressure * 0.012);
+      addTradeVolume(Math.floor(2 + state.idlePressure * .42 + state.externalSellPressure * .28));
+      maybeCommunity(state.externalSellPressure > 32 ? '실망매물' : '탄식', .8);
+    }
+
+    // 장중 15초 동안은 불규칙한 틱이 모여 하루 캔들 하나의 고가/저가/종가를 만듭니다.
+    simulateMarketBurst(5, touchBoost);
+
+    const fair = fundamentalPrice();
+    if(state.price > 0 && state.price > fair * 1.35){
+      state.overheat += (state.price / Math.max(1,fair) - 1.35) * 0.9;
+      if(Math.random() < .18) maybeCommunity('과열', .7);
+    }
+
+    state.sentiment *= 0.925;
+    state.eventHeat *= 0.95;
+    state.interest *= 0.9985;
+    state.companyValue *= 1.00015;
+    state.overheat *= 0.985;
+    if(state.touchHeat > 80) state.overheat += Math.min(0.22, (state.touchHeat - 80) * 0.002);
+
+    rollCandleIfNeeded(Date.now());
+
+    if(state.tick % 3 === 0 && state.price > 0){
+      maybeCommunity(null, .44);
+    }
+
+    state.buyerTier = getBuyerTier();
+    if(Date.now() - state.lastSave > 2500){ save(); state.lastSave = Date.now(); }
+    updateAll();
+  }
+
+  function closeCandle(now=Date.now()){
+    if(state.price <= 0) return;
+    if(!state.activeCandle || !isRealCandle(state.activeCandle)){
+      state.activeCandle = null;
+      state.candleStartedAt = now;
+      return;
+    }
+
+    const closed = {
+      o:Number(state.activeCandle.o) || state.price,
+      h:Math.max(Number(state.activeCandle.h)||state.price, state.price),
+      l:Math.min(Number(state.activeCandle.l)||state.price, state.price),
+      c:state.price,
+      v:Number(state.activeCandle.v)||0,
+      gapPct:Number(state.activeCandle.gapPct)||0,
+      day: state.gameDay
+    };
+    state.candles.push(closed);
+    while(state.candles.length > candleHistoryLimit) state.candles.shift();
+    state.prevClose = closed.c;
+    state.activeCandle = null;
+    state.candleStartedAt = now;
+    chartOffset = 0;
+  }
+
+  function rollCandleIfNeeded(now=Date.now()){
+    if(state.price <= 0) return;
+    advanceDayCycle(now);
+  }
+
+  function touchWork(ev){
+    const now = Date.now();
+    const earn = state.tapBase + state.rndLevel + operatingFactories().length;
+    state.cash += earn;
+
+    // 터치 순간에도 먼저 장시간을 보정해서 장마감/장중 판단이 밀리지 않게 합니다.
+    const phase = advanceDayCycle(now);
+
+    pruneTouchTimes(now);
+    state.touchTimes.push(now);
+    const recentTaps = recentTouchCount(now);
+    state.lastTouchAt = now;
+    state.touchPeak = Math.max(Number(state.touchPeak)||0, recentTaps);
+
+    const comboBonus = Math.min(2.4, recentTaps * 0.012);
+    state.touchHeat = clamp(state.touchHeat + marketConfig.touchHeatGain + comboBonus, 0, marketConfig.touchHeatMax);
+    state.buyPressure = clamp(state.buyPressure + marketConfig.buyPressureGain + comboBonus * 0.38, 0, marketConfig.buyPressureMax);
+    state.marketAttention = clamp(state.marketAttention + marketConfig.attentionGain + comboBonus * 0.75, 0, marketConfig.marketAttentionMax);
+    state.externalBuyPressure = clamp(state.externalBuyPressure + marketConfig.externalBuyGain + comboBonus * 0.34, 0, marketConfig.externalBuyMax);
+    state.externalVolumeHeat = clamp(state.externalVolumeHeat + marketConfig.externalVolumeGain + comboBonus * 0.65, 0, marketConfig.externalVolumeMax);
+    state.externalSellPressure = Math.max(0, state.externalSellPressure - 2.3);
+    state.idlePressure = Math.max(0, state.idlePressure - 1.8);
+
+    if(!phase.open){
+      state.afterMarketTouches = afterMarketTouchCount() + 1;
+      state.overnightHeat = clamp((Number(state.overnightHeat)||0) + marketConfig.afterMarketHeatGain + comboBonus * 0.55, 0, 260);
+      state.interest += 0.55 + Math.min(1.8, recentTaps * .008);
+      state.sentiment += 0.10 + Math.min(0.85, recentTaps * .006);
+      state.eventHeat += 0.10 + Math.min(0.60, recentTaps * .002);
+      state.companyValue += earn * 0.06;
+      if(state.afterMarketTouches === 10 || state.afterMarketTouches === 40 || state.afterMarketTouches === 100){
+        maybeCommunity(state.afterMarketTouches >= 100 ? '과열' : '대량매수', .95);
+        showFactoryNews(`[장마감] 야간 관심 ${state.afterMarketTouches}회 · 다음 장 시초가 기대감 상승`, 'good');
+      }else if(Math.random() < .14){
+        maybeCommunity('관망', .7);
+      }
+      log(`장마감 영업 +${fmt(earn)} · 다음 장 기대감 +${state.afterMarketTouches.toLocaleString('ko-KR')}`);
+      showFloat(ev, '장전 기대 +' + state.afterMarketTouches.toLocaleString('ko-KR'));
+      updateAll();
+      return;
+    }
+
+    state.interest += 1 + state.rndLevel * .12 + Math.min(2.2, recentTaps * .012);
+    state.sentiment += 0.20 + Math.min(1.25, recentTaps * .009);
+    addTradeVolume(1 + state.rndLevel + Math.floor(recentTaps / 24));
+    state.companyValue += earn * 0.12;
+    simulateMarketBurst(2, 3 + state.rndLevel + Math.min(12, recentTaps * .05));
+
+    if(recentTaps === 30 || recentTaps === 80 || recentTaps === 150){
+      maybeCommunity(recentTaps >= 150 ? '과열' : '대량매수', .95);
+    }
+
+    if(Math.random() < Math.min(.35, state.interest / 900)){
+      const boost = 1 + getBuyerTier();
+      state.sentiment += boost;
+      addTradeVolume(boost * 2);
+      log(`${buyerName()}가 관심을 보입니다. 거래량 +${boost*2}`);
+      maybeCommunity('대량매수', .7);
+    } else {
+      log(`영업 성공 +${fmt(earn)}, 관심도 상승`);
+      maybeCommunity(null, .18);
+    }
+    showFloat(ev, '+' + fmt(earn));
+    updateAll();
+  }
+
+
+  function applyPlayerOrderImpact(q, side, value){
+    if(state.price <= 0 || q <= 0) return;
+    const companyBase = Math.max(50000, state.companyValue + state.revenue * 0.08 + state.price * 600);
+    const valueRatio = value / companyBase;
+    const volumeBase = Math.max(25, Number(state.todayVolume)||0, Number(state.activeCandle && state.activeCandle.v)||0);
+    const volumeRatio = q / (volumeBase + q);
+    const sizeBoost = Math.sqrt(q) * 0.0014;
+    let pct = clamp(0.006 + valueRatio * 0.085 + volumeRatio * 0.055 + sizeBoost, 0.006, 0.26);
+    const sign = side === 'buy' ? 1 : -1;
+    const jitter = 0.82 + Math.random() * 0.36;
+    movePrice(state.price * pct * sign * jitter);
+    addTradeVolume(Math.max(q, Math.floor(q * (1.5 + pct * 9))));
+    state.eventHeat += pct * 35;
+    state.overheat += side === 'buy' ? pct * 22 : Math.max(0, pct * 5);
+    if(side === 'buy'){
+      state.sentiment += 1.5 + pct * 28;
+      state.marketAttention = clamp(state.marketAttention + q * 0.06 + pct * 70, 0, marketConfig.marketAttentionMax);
+      state.externalBuyPressure = clamp(state.externalBuyPressure + q * 0.035 + pct * 45, 0, marketConfig.externalBuyMax);
+      state.externalVolumeHeat = clamp(state.externalVolumeHeat + q * 0.05 + pct * 80, 0, marketConfig.externalVolumeMax);
+      if(pct > 0.035) showFactoryNews(`개인 대량매수 ${q.toLocaleString('ko-KR')}주 · 시장 관심 급증`, 'good');
+      addCommunityComment(pct > 0.035 ? '대량매수' : '상승', {force:pct > 0.055});
+    }else{
+      state.sentiment -= 1.7 + pct * 30;
+      state.externalSellPressure = clamp(state.externalSellPressure + q * 0.045 + pct * 55, 0, marketConfig.externalSellMax);
+      state.externalVolumeHeat = clamp(state.externalVolumeHeat + q * 0.04 + pct * 70, 0, marketConfig.externalVolumeMax);
+      if(pct > 0.035) showFactoryNews(`개인 대량매도 ${q.toLocaleString('ko-KR')}주 · 시장 경계감 증가`, 'bad');
+      addCommunityComment(pct > 0.035 ? '대량매도' : '하락', {force:pct > 0.055});
+    }
+  }
+
+  function buyStock(){
+    if(state.price <= 0){ log('아직 주가가 0원입니다. 터치해서 첫 거래를 만들어야 합니다.'); return; }
+    const q = effectiveBuyQty();
+    if(q <= 0){ log('매수 가능한 현금이 부족합니다. 터치로 잔고를 먼저 늘려야 합니다.'); return; }
+    const cost = state.price * q;
+    const beforeValue = state.avgPrice * state.shares;
+    state.cash -= cost;
+    state.shares += q;
+    state.avgPrice = state.shares > 0 ? (beforeValue + cost) / state.shares : 0;
+    applyPlayerOrderImpact(q, 'buy', cost);
+    if(Math.random() < .30) addCommunityComment('기쁨');
+    log(`${q.toLocaleString('ko-KR')}주 매수 완료. 내 잔고에서 ${fmt(cost)} 차감`);
+    updateAll();
+  }
+
+  function sellStock(){
+    if(state.price <= 0){ log('아직 거래 가능한 주가가 없습니다.'); return; }
+    const q = effectiveSellQty();
+    if(q <= 0){ log('매도할 보유 주식이 없습니다.'); return; }
+    const value = state.price * q;
+    state.cash += value;
+    state.shares -= q;
+    if(state.shares === 0) state.avgPrice = 0;
+    applyPlayerOrderImpact(q, 'sell', value);
+    if(Math.random() < .36) addCommunityComment(state.shares > 0 ? '탄식' : '분노');
+    log(`${q.toLocaleString('ko-KR')}주 매도 완료. 잔고에 ${fmt(value)} 입금`);
+    updateAll();
+  }
+
+  function buyFactory(){
+    normalizeFactories();
+    if(state.factories.length >= factoryMaxSlots){ log('공장 슬롯이 모두 찼습니다. 다음 단계는 공장 합성 시스템입니다.'); return; }
+    const slotIndex = state.factories.length;
+    const spec = getSpec(slotIndex);
+    const cost = factoryCost(slotIndex);
+    const startCost = factoryStartCost(slotIndex);
+    if(startCost > 0 && state.cash < startCost){
+      const need = Math.max(0, startCost - state.cash);
+      const msg = `공장 검토 착수금 부족 · 추가 ${fmt(need)} 필요`;
+      log(msg);
+      showFactoryNews(msg, 'bad');
+      pushFactoryLog(`💸 DAY ${state.gameDay} ${spec.name} 검토 착수 실패 · 필요 ${fmt(startCost)}`);
+      updateAll();
+      return;
+    }
+    state.cash -= startCost;
+    state.factorySeq++;
+    const factory = {id:state.factorySeq, type:slotIndex, name:spec.name, item:spec.item, icon:spec.icon, cost, paid:startCost, status:'review', made:0, defects:0, lastGain:0, pulse:0, workers:1, lines:1};
+    setFactoryStage(factory, 'review');
+    state.factories.push(factory);
+    state.factoryLevel = operatingFactories().length;
+    state.companyValue += cost * 0.018;
+    state.eventHeat += 24 + slotIndex * 3;
+    state.sentiment += 10;
+    state.interest += 8;
+    addTradeVolume(50 + slotIndex * 12);
+    if(state.price <= 0 && state.interest < 10) state.interest = 10;
+    if(isMarketOpen()) simulateMarketBurst(4, 24 + slotIndex * 5);
+    pushFactoryLog(`📋 DAY ${state.gameDay} ${spec.name} 계획 발표 · 총사업비 ${fmt(cost)} · 착수금 ${fmt(startCost)}`);
+    applyFactoryEventImpact(factory, `${spec.name} 신규 공장 계획 발표 · 총사업비 ${fmt(cost)}`, {pct:(0.12 + Math.random()*0.10), heat:26, sentiment:18, volume:110, valueRate:.030, tone:'good', comment:'대량매수'});
+    log(`${spec.name} 공장 계획 발표. 총사업비 ${fmt(cost)} · 검토 → 승인 → 자금조달 → 건설 → 시운전 후 가동됩니다.`);
+    updateAll();
+  }
+
+  function doRnd(){
+    const cost = Math.floor(300 * Math.pow(1.7, state.rndLevel));
+    if(state.cash < cost){ log(`연구 개발에 ${fmt(cost)} 필요합니다.`); return; }
+    state.cash -= cost;
+    state.rndLevel++;
+    state.tapBase += 1;
+    state.companyValue += cost * 0.18 + state.rndLevel * 45;
+    state.eventHeat += 8 + state.rndLevel * 5;
+    state.sentiment += 8;
+    addTradeVolume(20 + state.rndLevel * 8);
+    simulateMarketBurst(3, 18 + state.rndLevel * 4);
+    addCommunityComment('급등');
+    if(Math.random() < .35) addCommunityComment('기쁨');
+    log(`R&D ${state.rndLevel}단계 완료. 터치/생산 효율 상승`);
+    updateAll();
+  }
+
+  function getBuyerTier(){
+    if(state.volume > 5000 || state.price > 500) return 5;
+    if(state.volume > 1800 || state.price > 180) return 4;
+    if(state.volume > 650 || state.price > 70) return 3;
+    if(state.volume > 180 || state.price > 20) return 2;
+    if(state.volume > 20 || state.price > 0) return 1;
+    return 0;
+  }
+  function buyerName(){
+    return ['구매자 없음','지인 투자자','동네 개미','제조업 관심 투자자','전문 투자자','기관 투자자'][getBuyerTier()] || '기관 투자자';
+  }
+
+  function maxBuyQty(){
+    if(state.price <= 0) return 0;
+    return Math.max(0, Math.floor(state.cash / state.price));
+  }
+
+  function maxSellQty(){
+    return Math.max(0, Math.floor(state.shares));
+  }
+
+  function effectiveBuyQty(){
+    return Math.min(Math.floor(state.qty), maxBuyQty());
+  }
+
+  function effectiveSellQty(){
+    return Math.min(Math.floor(state.qty), maxSellQty());
+  }
+
+  function mood(){
+    const s = state.sentiment + state.eventHeat * .22 + state.buyPressure * .12 - state.idlePressure * .16;
+    if(state.price <= 0) return '냉각';
+    if(s > 45) return '과열';
+    if(s > 20) return '강세';
+    if(s > 5) return '관심';
+    if(s < -8) return '매도우위';
+    return '보통';
+  }
+
+  function renderFactoryScreen(){
+    const countEl = $('factoryCountText');
+    const gridEl = $('factoryGrid');
+    const logEl = $('factoryLog');
+    if(!gridEl) return;
+    normalizeFactories();
+    const operating = operatingFactories().length;
+    const projects = projectFactories().length;
+    if(countEl) countEl.textContent = `${operating}가동 / ${projects}진행`;
+    const marketDayEl = $('marketDayText');
+    if(marketDayEl){
+      const ph = marketPhase();
+      marketDayEl.textContent = `DAY ${state.gameDay} · ${ph.label} ${Math.ceil(ph.left/1000)}초`;
+    }
+    const selected = state.selectedFactoryId !== null ? getFactoryById(state.selectedFactoryId) : null;
+    let detailHtml = '';
+    if(selected && selected.status === 'operating'){
+      const workerCost = factoryWorkerCost(selected);
+      const lineCost = factoryLineCost(selected);
+      const output = factoryDailyOutput(selected);
+      const defectRate = factoryDefectChance(selected);
+      detailHtml = `<div class="factoryDetail">
+        <div class="factoryDetailTop">
+          <div class="factoryDetailIcon">${selected.icon || '🏭'}</div>
+          <div class="factoryDetailTitle"><b>${selected.name || '공장'} 개별 관리</b><span>${selected.item || '부품'} · DAY ${state.gameDay} 기준</span></div>
+          <button class="factoryBackBtn" data-factory-back="1">목록</button>
+        </div>
+        <div class="factoryDetailStats">
+          <div class="factoryDetailStat"><span>근로자</span><b>${Math.floor(selected.workers||1).toLocaleString('ko-KR')}명</b></div>
+          <div class="factoryDetailStat"><span>생산라인</span><b>${Math.floor(selected.lines||1).toLocaleString('ko-KR')}라인</b></div>
+          <div class="factoryDetailStat"><span>예상 일매출</span><b>${fmt(output)}</b></div>
+          <div class="factoryDetailStat"><span>불량률</span><b>${(defectRate*100).toFixed(1)}%</b></div>
+          <div class="factoryDetailStat"><span>양품</span><b>${Math.floor(selected.made||0).toLocaleString('ko-KR')}개</b></div>
+          <div class="factoryDetailStat"><span>불량</span><b>${Math.floor(selected.defects||0).toLocaleString('ko-KR')}개</b></div>
+        </div>
+        <div class="factoryManageTabs">
+          <div class="factoryManageTab"><b>공장 관리</b><span>상태·품질·실적 확인</span></div>
+          <div class="factoryManageTab"><b>생산 관리</b><span>라인 증설로 생산량 확대</span></div>
+          <div class="factoryManageTab"><b>근무인원 관리</b><span>근로자 채용으로 안정화</span></div>
+        </div>
+        <div class="factorySectionTitle">생산 / 근무인원 관리</div>
+        <div class="factoryUpgradeGrid">
+          <button class="factoryUpgradeBtn" data-upgrade-worker="${selected.id}" ${state.cash < workerCost ? 'disabled' : ''}><b>근무인원 관리</b><span>${fmt(workerCost)} · 근로자 채용, 불량률 완화</span></button>
+          <button class="factoryUpgradeBtn" data-upgrade-line="${selected.id}" ${state.cash < lineCost ? 'disabled' : ''}><b>생산 관리</b><span>${fmt(lineCost)} · 생산라인 증설, 일매출 증가</span></button>
+        </div>
+      </div>`;
+    }
+    const nextIndex = state.factories.length;
+    const html = Array.from({length:factoryMaxSlots}, (_,i)=>{
+      const f = state.factories[i];
+      if(f){
+        const spec = getSpec(f.type);
+        const pulseFresh = f.pulse && Date.now() - f.pulse < 1200;
+        if(f.status === 'operating'){
+          const defectRate = factoryDefectChance(f);
+          return `<div class="factorySlot owned" data-open-factory="${f.id}">
+            ${pulseFresh && f.lastGain > 0 ? `<div class="factoryPulse">+${fmt(f.lastGain || 10)}</div>` : ''}
+            ${pulseFresh && f.lastGain <= 0 ? `<div class="factoryPulse">불량</div>` : ''}
+            <div class="factoryIcon">${f.icon || '🏭'}</div>
+            <div class="factoryName">${f.name || '공장'}</div>
+            <div class="factoryItem">생산품: ${f.item || '부품'} · ${Math.floor(f.workers||1)}명/${Math.floor(f.lines||1)}라인</div>
+            <div class="factoryYield">양품 ${Math.floor(f.made || 0).toLocaleString('ko-KR')} · 불량 ${Math.floor(f.defects || 0)}</div>
+            <div class="factoryRisk">불량률 ${(defectRate*100).toFixed(1)}%</div>
+            <div class="factoryOpenHint">관리 보기</div>
+          </div>`;
+        }
+        const pct = Math.round(stageProgress(f) * 100);
+        const cls = f.status === 'approval' ? 'approval' : f.status === 'build' ? 'build' : f.status === 'trial' ? 'trial' : f.status === 'funding' ? 'approval' : 'review';
+        const costPct = Math.round(factoryCostProgress(f) * 100);
+        const remain = factoryRemainingCost(f);
+        const extra = f.status === 'approval' ? `찬성률 ${(approvalChance(f)*100).toFixed(0)}%` : f.status === 'funding' ? `조달 ${costPct}% · 남은 ${fmt(remain)}` : f.status === 'build' ? `완공까지 ${f.daysLeft}일` : f.status === 'trial' ? `안정화 ${f.daysLeft}일` : `검토 ${f.daysLeft}일`;
+        return `<div class="factorySlot project ${cls}">
+          <div class="factoryIcon">${f.icon || '🏭'}</div>
+          <div class="factoryName">${f.name || '공장'}</div>
+          <div class="factoryStage">${stageText[f.status] || '진행중'} · ${f.daysLeft}일</div>
+          <div class="factoryProgress"><i style="width:${pct}%"></i></div>
+          <div class="factoryRisk">${extra}</div>
+          <div class="factoryItem">총사업비 ${fmt(f.cost || spec.cost || 0)} · 완료 후 ${f.item} 생산</div>
+        </div>`;
+      }
+      const cost = factoryCost(i);
+      const startCost = factoryStartCost(i);
+      const buyable = i === nextIndex;
+      return `<div class="factorySlot ${buyable ? 'buyable' : 'locked'}" ${buyable ? `data-buy-factory-slot="${i}"` : ''}>
+        <button type="button" class="factoryBuy" data-buy-factory="${i}" ${buyable ? '' : 'disabled'}>
+          <span class="plusBox">${buyable ? '＋' : '🔒'}</span>
+          <b>${buyable ? '신규 공장 계획 발표' : '잠긴 공장 후보'}</b>
+          <small>${buyable ? `착수 ${fmt(startCost)} · 총 ${fmt(cost)}` : '순서대로 해금'}</small>
+        </button>
+      </div>`;
+    }).join('');
+    gridEl.innerHTML = detailHtml + html;
+    if(logEl){
+      logEl.innerHTML = (state.factoryLog || []).slice(0,8).map(line=>`<div class="factoryLogLine">${line}</div>`).join('') || '<div class="factoryLogLine">아직 기록이 없습니다. 공장 계획을 발표해보세요.</div>';
+    }
+  }
+
+
+  // ===== 전체 UI 갱신 =====
+  function updateAll(){
+    const stockValue = state.shares * state.price;
+    const cashBalance = state.cash;
+    const chg = state.prevClose > 0 ? ((state.price - state.prevClose) / state.prevClose) * 100 : 0;
+    normalizeFactories();
+    const operatingCount = operatingFactories().length;
+    $('assetText').textContent = fmt(cashBalance).replace('₩', '₩ ');
+    $('priceText').textContent = fmt(state.price);
+    const priceWrap = $('priceWrap');
+    const priceArrow = $('priceArrow');
+    let priceDir = 'flat';
+    if(state.price > 0 && state.prevClose <= 0) priceDir = 'up';
+    else if(state.prevClose > 0 && state.price > state.prevClose) priceDir = 'up';
+    else if(state.prevClose > 0 && state.price < state.prevClose) priceDir = 'down';
+    priceWrap.className = 'price ' + priceDir;
+    priceArrow.textContent = priceDir === 'up' ? '▲' : (priceDir === 'down' ? '▼' : '◆');
+    $('volumeText').textContent = Math.floor(state.volume).toLocaleString('ko-KR');
+    $('moodText').textContent = mood();
+    $('sharesText').textContent = Math.floor(state.shares).toLocaleString('ko-KR') + '주';
+    $('orderQtyText').textContent = Math.floor(state.qty).toLocaleString('ko-KR') + '주';
+    $('orderResetQty').textContent = Math.floor(state.qty).toLocaleString('ko-KR');
+    $('avgText').textContent = fmt(state.avgPrice);
+    $('tapIncomeText').textContent = fmt(state.tapBase + state.rndLevel + operatingCount);
+    $('todayVolText').textContent = `${Math.floor(state.touchHeat)} / 관심 ${Math.floor(state.marketAttention)}`;
+    $('buyerText').textContent = touchStateName();
+    const buyQty = effectiveBuyQty();
+    const sellQty = effectiveSellQty();
+    $('buyBtn').textContent = `매수 ${buyQty.toLocaleString('ko-KR')}`;
+    $('sellBtn').textContent = `매도 ${sellQty.toLocaleString('ko-KR')}`;
+    $('buyBtn').disabled = state.price <= 0 || buyQty <= 0;
+    $('sellBtn').disabled = state.price <= 0 || sellQty <= 0;
+
+    const pnl = state.shares * (state.price - state.avgPrice);
+    $('pnlText').textContent = (pnl >= 0 ? '+' : '-') + fmt(Math.abs(pnl));
+    $('pnlText').style.color = pnl >= 0 ? 'var(--red)' : 'var(--blue)';
+
+    const changeEl = $('changeText');
+    if(state.price <= 0){ changeEl.textContent = '거래 없음'; changeEl.className = 'change flat'; }
+    else if(state.prevClose <= 0){ changeEl.textContent = '첫 거래 형성'; changeEl.className = 'change up'; }
+    else { changeEl.textContent = `${state.price >= state.prevClose ? '▲' : '▼'} ${Math.abs(chg).toFixed(2)}%`; changeEl.className = 'change ' + (state.price >= state.prevClose ? 'up' : 'down'); }
+    updateMarketClock();
+
+    renderFactoryScreen();
+    const rndCost = Math.floor(300 * Math.pow(1.7, state.rndLevel));
+    $('rndBtn').textContent = `연구 개발 ${fmt(rndCost)}`;
+    $('rndBtn').disabled = state.cash < rndCost;
+    $('rndInfo').textContent = `R&D ${state.rndLevel}단계. 터치 기본 수익 ${fmt(state.tapBase)}, 공장 불량률 개선 +${Math.min(24, Math.floor(state.rndLevel * 1.5))}%`;
+    $('stockInfo').textContent = `현재 ${buyerName()} 단계입니다. DAY ${state.gameDay} ${marketPhase().label}, 총 거래량 ${Math.floor(state.volume).toLocaleString('ko-KR')}, 투자심리 ${mood()}, 기업가치 ${fmt(state.companyValue)}, 과열도 ${Math.floor(state.overheat)}, 영업열기 ${Math.floor(state.touchHeat)}, 시장관심 ${Math.floor(state.marketAttention)}, 외부매수 ${Math.floor(state.externalBuyPressure)}, 실망매물 ${Math.floor(Math.max(state.idlePressure, state.externalSellPressure))}, 장마감 기대 ${afterMarketTouchCount()}회.`;
+    syncAdminRemote();
+
+    drawChart();
+    updateCommunity();
+  }
+
+  function totalChartList(){
+    const all = [...state.candles];
+    if(state.activeCandle) all.push(state.activeCandle);
+    return all;
+  }
+
+  function clampChartView(){
+    const allLen = totalChartList().length || 1;
+    chartViewCount = clamp(Math.round(chartViewCount), minViewCount, Math.min(maxViewCount, Math.max(minViewCount, allLen)));
+    chartOffset = clamp(Math.round(chartOffset), 0, Math.max(0, allLen - chartViewCount));
+  }
+
+  function visibleCandles(){
+    const all = totalChartList();
+    if(!all.length) return [];
+    clampChartView();
+    const latestIndex = Math.max(0, all.length - 1 - chartOffset);
+    const start = Math.max(0, latestIndex - chartViewCount + 1);
+    return all.slice(start, latestIndex + 1);
+  }
+
+
+  // ===== 캔들그래프 렌더링 =====
+  function drawChart(){
+    resizeCanvas();
+    ctx.clearRect(0,0,chartW,chartH);
+    const list = visibleCandles();
+
+    const splitY = Math.floor(chartH * 0.75);
+    const candleTop = 0;
+    const candleBottom = splitY - 2;
+    const candleH = Math.max(30, candleBottom - candleTop);
+    const volTop = splitY + 2;
+    const volBottom = chartH;
+    const volH = Math.max(20, volBottom - volTop);
+
+    drawGrid(splitY);
+
+    const highs = list.map(c=>Number(c.h)||0);
+    const lows = list.map(c=>Number(c.l)||0);
+    let maxVal = Math.max(1, ...highs);
+    let minVal = Math.min(...lows);
+    if(!Number.isFinite(minVal)) minVal = 0;
+    minVal = Math.max(0, minVal);
+    if(maxVal === minVal){
+      if(maxVal <= 1){ minVal = 0; maxVal = 1; }
+      else { minVal = maxVal - 1; }
+    }
+    const range = Math.max(1, maxVal - minVal);
+    const yRaw = (v) => candleTop + ((maxVal - v) / range) * candleH;
+    const y = (v) => clamp(yRaw(v), candleTop + 1, candleBottom - 1);
+
+    const maxVol = Math.max(1, ...list.map(c=>Number(c.v)||0));
+    const slotCount = Math.max(minViewCount, Math.min(chartViewCount, maxViewCount));
+    const gap = slotCount > 320 ? 0.45 : slotCount > 220 ? 0.7 : slotCount > 140 ? 1 : slotCount > 70 ? 2 : 3;
+    const rawCw = (chartW - 22 - gap*(slotCount-1)) / Math.max(1, slotCount);
+    const minCw = slotCount > 320 ? 0.55 : slotCount > 220 ? 0.8 : slotCount > 140 ? 1.15 : 2.5;
+    const cw = Math.max(minCw, rawCw);
+    const x0 = 11 + Math.max(0, slotCount - list.length) * (cw + gap);
+
+    list.forEach((c,i)=>{
+      const x = x0 + i*(cw+gap);
+      const rise = c.c >= c.o;
+      const color = rise ? '#ff4d5d' : '#4d8dff';
+
+      const vol = Number(c.v)||0;
+      const vh = Math.max(vol > 0 ? 2 : 0, (vol / maxVol) * (volH - 6));
+      ctx.fillStyle = rise ? 'rgba(255,77,93,.55)' : 'rgba(77,141,255,.55)';
+      roundRect(ctx, x, volBottom - vh, cw, vh, Math.min(3,cw/2), true, false);
+
+      const openY = y(c.o), closeY = y(c.c), highY = y(c.h), lowY = y(c.l);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = cw < 5 ? 1 : 2;
+      ctx.beginPath();
+      ctx.moveTo(x+cw/2, highY);
+      ctx.lineTo(x+cw/2, lowY);
+      ctx.stroke();
+      const bodyY = Math.min(openY, closeY);
+      const bodyH = Math.max(cw < 5 ? 2 : 3, Math.abs(closeY-openY));
+      roundRect(ctx, x, bodyY, cw, bodyH, Math.min(3,cw/2), true, false);
+    });
+
+    drawAverageLine(yRaw, candleTop, candleBottom);
+
+    ctx.fillStyle = '#7f8da4';
+    ctx.font = '20px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(maxVal).replace('₩',''), chartW-10, 19);
+    ctx.fillText(fmt(minVal).replace('₩',''), chartW-10, candleBottom-4);
+    ctx.fillStyle = 'rgba(127,141,164,.9)';
+    ctx.font = '16px system-ui';
+    ctx.fillText('거래량', chartW-10, volTop+15);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(174,184,202,.82)';
+    ctx.font = '15px system-ui';
+    ctx.fillText(chartOffset > 0 ? `과거 ${chartOffset}봉 · ${list.length}봉` : `최신 · ${list.length}봉`, 10, chartH - 9);
+    ctx.textAlign = 'right';
+    ctx.fillText(`보관 ${Math.max(0,totalChartList().length-1)}봉 · 확대/축소`, chartW - 10, chartH - 9);
+
+    if(state.price <= 0){
+      ctx.fillStyle = 'rgba(255,255,255,.58)';
+      ctx.font = 'bold 26px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('거래 없음', chartW/2, candleH/2 - 2);
+      ctx.font = '18px system-ui';
+      ctx.fillText('터치해서 첫 매수자를 만드세요', chartW/2, candleH/2 + 28);
+    }
+  }
+
+  function drawAverageLine(yRaw, candleTop, candleBottom){
+    if(state.shares <= 0 || state.avgPrice <= 0) return;
+    const avg = state.avgPrice;
+    const avgY = clamp(yRaw(avg), candleTop + 3, candleBottom - 3);
+    const outside = yRaw(avg) !== avgY;
+    ctx.save();
+    ctx.setLineDash([9,6]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(246,201,91,.92)';
+    ctx.beginPath();
+    ctx.moveTo(0, avgY);
+    ctx.lineTo(chartW, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const label = `${outside ? (avg > state.price ? '평단↑ ' : '평단↓ ') : '평단 '} ${fmt(avg)}`;
+    ctx.font = 'bold 17px system-ui';
+    const tw = ctx.measureText(label).width + 18;
+    const tx = 9;
+    const ty = clamp(avgY - 12, candleTop + 2, candleBottom - 24);
+    ctx.fillStyle = 'rgba(12,17,27,.86)';
+    roundRect(ctx, tx, ty, tw, 23, 7, true, false);
+    ctx.fillStyle = '#f6c95b';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, tx + 9, ty + 16);
+    ctx.restore();
+  }
+
+  function chartDistance(){
+    const pts = [...chartPointers.values()];
+    if(pts.length < 2) return 0;
+    const dx = pts[0].x - pts[1].x;
+    const dy = pts[0].y - pts[1].y;
+    return Math.hypot(dx, dy);
+  }
+
+  function chartCandleStep(){
+    const rect = canvas.getBoundingClientRect();
+    const perCandle = rect.width / Math.max(1, chartViewCount);
+    return clamp(perCandle, 1.2, 14);
+  }
+
+  function zoomChart(factor){
+    chartViewCount = clamp(Math.round(chartViewCount * factor), minViewCount, maxViewCount);
+    clampChartView();
+    drawChart();
+  }
+
+  function drawGrid(splitY){
+    ctx.fillStyle = '#090f1a';
+    ctx.fillRect(0,0,chartW,chartH);
+    ctx.fillStyle = 'rgba(255,255,255,.025)';
+    ctx.fillRect(0,splitY,chartW,chartH-splitY);
+    ctx.strokeStyle = 'rgba(255,255,255,.06)';
+    ctx.lineWidth = 1;
+    for(let i=1;i<4;i++){
+      const y = i*splitY/4;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(chartW,y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.13)';
+    ctx.beginPath(); ctx.moveTo(0,splitY); ctx.lineTo(chartW,splitY); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.05)';
+    for(let i=1;i<7;i++){
+      const x = i*chartW/7;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,chartH); ctx.stroke();
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+    if(fill) ctx.fill();
+    if(stroke) ctx.stroke();
+  }
+
+  function resizeCanvas(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(220, Math.floor(rect.width*dpr));
+    const h = Math.max(110, Math.floor(rect.height*dpr));
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
+    }
+    chartW = canvas.width; chartH = canvas.height;
+    ctx.setTransform(1,0,0,1,0,0);
+  }
+
+  function showFloat(ev, text){
+    const area = $('contentArea');
+    const rect = area.getBoundingClientRect();
+    const x = ev && ev.clientX ? ev.clientX - rect.left : rect.width/2;
+    const y = ev && ev.clientY ? ev.clientY - rect.top : rect.height/2;
+    const el = document.createElement('div');
+    el.className = 'floatMoney';
+    el.textContent = text;
+    el.style.left = clamp(x,30,rect.width-90) + 'px';
+    el.style.top = clamp(y-10,35,rect.height-35) + 'px';
+    area.appendChild(el);
+    setTimeout(()=>el.remove(),800);
+  }
+
+  function log(msg){ state.lastAction = msg; }
+
+  document.querySelectorAll('[data-add]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const add = Number(btn.dataset.add);
+      state.qty = clamp(Math.floor(state.qty + add), 1, 999999);
+      log(`주문 수량 ${state.qty.toLocaleString('ko-KR')}주`);
+      updateAll();
+    });
+  });
+  $('orderResetBtn').addEventListener('click',()=>{
+    state.qty = 1;
+    log('주문 수량을 1주로 초기화했습니다.');
+    updateAll();
+  });
+  $('buyBtn').addEventListener('click', buyStock);
+  $('sellBtn').addEventListener('click', sellStock);
+  $('contentArea').addEventListener('pointerdown', (ev)=>{
+    if(activeTab !== 'home') return;
+    touchWork(ev);
+  });
+  $('rndBtn').addEventListener('click', doRnd);
+  $('resetBtn').addEventListener('click', reset);
+  $('adminSpeed1Btn')?.addEventListener('click', ()=>setAdminSpeed(1));
+  $('adminSpeed5Btn')?.addEventListener('click', ()=>setAdminSpeed(5));
+  $('adminSpeed20Btn')?.addEventListener('click', ()=>setAdminSpeed(20));
+  $('adminDayBtn')?.addEventListener('click', ()=>adminAdvanceDays(1));
+  $('adminTenDayBtn')?.addEventListener('click', ()=>adminAdvanceDays(10));
+  $('adminMoneyBtn')?.addEventListener('click', adminAddMoney);
+  $('commentRefreshBtn').addEventListener('click', ()=>{
+    addCommunityComment(null, {force:true});
+    log('종목토론방 댓글이 새로 올라왔습니다.');
+    updateAll();
+    scrollCommunityTop();
+  });
+
+
+  function handleFactoryBuyInput(ev){
+    const grid = $('factoryGrid');
+    if(!grid) return;
+    const back = ev.target.closest?.('[data-factory-back]');
+    if(back && grid.contains(back)){
+      ev.preventDefault?.();
+      ev.stopPropagation?.();
+      closeFactoryDetail();
+      return;
+    }
+    const worker = ev.target.closest?.('[data-upgrade-worker]');
+    if(worker && grid.contains(worker)){
+      ev.preventDefault?.();
+      ev.stopPropagation?.();
+      state.selectedFactoryId = Number(worker.dataset.upgradeWorker);
+      upgradeFactoryWorkers();
+      return;
+    }
+    const line = ev.target.closest?.('[data-upgrade-line]');
+    if(line && grid.contains(line)){
+      ev.preventDefault?.();
+      ev.stopPropagation?.();
+      state.selectedFactoryId = Number(line.dataset.upgradeLine);
+      upgradeFactoryLines();
+      return;
+    }
+    const open = ev.target.closest?.('[data-open-factory]');
+    if(open && grid.contains(open)){
+      ev.preventDefault?.();
+      ev.stopPropagation?.();
+      openFactoryDetail(Number(open.dataset.openFactory));
+      return;
+    }
+    const target = ev.target.closest?.('[data-buy-factory], [data-buy-factory-slot]');
+    if(!target || !grid.contains(target)) return;
+    const raw = target.dataset.buyFactory ?? target.dataset.buyFactorySlot;
+    const idx = Number(raw);
+    normalizeFactories();
+    if(!Number.isFinite(idx) || idx !== state.factories.length) return;
+    ev.preventDefault?.();
+    ev.stopPropagation?.();
+    const now = Date.now();
+    if(now - lastFactoryBuyTap < 350) return;
+    lastFactoryBuyTap = now;
+    buyFactory();
+  }
+  const factoryGridRoot = $('factoryGrid');
+  if(factoryGridRoot){
+    factoryGridRoot.addEventListener('pointerup', handleFactoryBuyInput);
+    factoryGridRoot.addEventListener('click', handleFactoryBuyInput);
+  }
+
+  function activateTab(tab, navBtn=null){
+    const target = $('tab-' + tab);
+    if(!target) return;
+    activeTab = tab;
+    document.querySelectorAll('.navBtn').forEach(b=>b.classList.remove('active'));
+    if(navBtn) navBtn.classList.add('active');
+    else {
+      const matched = document.querySelector(`.navBtn[data-tab="${tab}"]`);
+      if(matched) matched.classList.add('active');
+    }
+    document.querySelectorAll('.tabBox').forEach(t=>t.classList.remove('active'));
+    target.classList.add('active');
+    const titles = {home:'영업 / 생산 터치', factory:'공장 생산', rnd:'연구 개발', stock:'주식 관리', community:'커뮤니티', future:'빈 페이지', setting:'회사 관리'};
+    $('tabTitle').textContent = titles[tab] || '게임';
+    if(tab === 'community') scrollCommunityTop();
+  }
+
+  document.querySelectorAll('.navBtn').forEach(btn=>{
+    btn.addEventListener('click',()=>activateTab(btn.dataset.tab, btn));
+  });
+
+  $('homeLivePost')?.addEventListener('pointerdown', (ev)=>{
+    ev.preventDefault?.();
+    ev.stopPropagation?.();
+  });
+  $('homeLivePost')?.addEventListener('click', (ev)=>{
+    ev.preventDefault?.();
+    ev.stopPropagation?.();
+    activateTab('community');
+  });
+
+  canvas.addEventListener('wheel', (ev)=>{
+    ev.preventDefault();
+    zoomChart(ev.deltaY < 0 ? 0.82 : 1.22);
+  }, {passive:false});
+
+  canvas.addEventListener('pointerdown', (ev)=>{
+    ev.preventDefault();
+    canvas.setPointerCapture?.(ev.pointerId);
+    chartPointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+    if(chartPointers.size === 1){
+      dragStartX = ev.clientX;
+      dragStartOffset = chartOffset;
+    }
+    if(chartPointers.size === 2){
+      pinchStartDistance = chartDistance();
+      pinchStartViewCount = chartViewCount;
+    }
+  });
+
+  canvas.addEventListener('pointermove', (ev)=>{
+    if(!chartPointers.has(ev.pointerId)) return;
+    ev.preventDefault();
+    chartPointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+    if(chartPointers.size >= 2){
+      const d = chartDistance();
+      if(d > 0 && pinchStartDistance > 0){
+        chartViewCount = clamp(Math.round(pinchStartViewCount * (pinchStartDistance / d)), minViewCount, maxViewCount);
+        clampChartView();
+        drawChart();
+      }
+      return;
+    }
+    const dx = ev.clientX - dragStartX;
+    const step = Math.round(dx / chartCandleStep());
+    if(step !== 0){
+      chartOffset = dragStartOffset + step;
+      clampChartView();
+      drawChart();
+    }
+  });
+
+  ['pointerup','pointercancel','pointerleave'].forEach(type=>{
+    canvas.addEventListener(type, (ev)=>{
+      chartPointers.delete(ev.pointerId);
+      if(chartPointers.size === 1){
+        const p = [...chartPointers.values()][0];
+        dragStartX = p.x;
+        dragStartOffset = chartOffset;
+      }
+      if(chartPointers.size < 2){
+        pinchStartDistance = 0;
+      }
+    });
+  });
+
+  canvas.addEventListener('dblclick', ()=>{
+    chartOffset = 0;
+    chartViewCount = 56;
+    drawChart();
+  });
+
+  function randomMarketDelay(){
+    return 50 + Math.random() * 1450;
+  }
+
+  // v3.4 무정지 시장 엔진
+  // - 이전 버전은 커뮤니티/공장/UI 중 한 곳에서 오류가 나면 시계까지 같이 멈춘 것처럼 보일 수 있었습니다.
+  // - 이번 버전은 시간/시계/캔들 진행을 가장 먼저 독립 처리하고, 나머지 기능은 각각 안전 실행합니다.
+  let nextMarketTickAt = Date.now() + randomMarketDelay();
+  let lastClockPaintAt = 0;
+  let lastFullUiPaintAt = 0;
+  let lastSaveBeatAt = 0;
+  let marketEngineStarted = false;
+  let marketLoopTimer = null;
+  let marketLoopTimer2 = null;
+  let marketWatchdogTimer = null;
+  let marketRafId = 0;
+  let lastRafBeatAt = 0;
+  let lastEngineBeatAt = 0;
+  let lastAdminSpeedAt = Date.now();
+  let marketWorker = null;
+  let marketWorkerUrl = null;
+  let lastWorkerBeatAt = 0;
+  const engineErrors = [];
+
+  function rememberEngineError(label, err){
+    try{
+      const msg = `${new Date().toLocaleTimeString('ko-KR')} ${label}: ${err && err.message ? err.message : err}`;
+      engineErrors.unshift(msg);
+      if(engineErrors.length > 8) engineErrors.pop();
+      console.warn('[INDI ENGINE]', msg, err);
+    }catch(e){}
+  }
+
+  function safeEngine(label, fn){
+    try{ return fn(); }
+    catch(err){ rememberEngineError(label, err); return null; }
+  }
+
+  function applyAdminTimeScale(now=Date.now()){
+    const speed = clamp(Number(state.adminSpeed)||1, 1, 20);
+    const delta = now - lastAdminSpeedAt;
+    lastAdminSpeedAt = now;
+    if(speed <= 1 || !Number.isFinite(delta) || delta <= 0) return;
+    const extra = Math.min(delta, 2000) * (speed - 1);
+    state.dayStartedAt -= extra;
+    if(Number.isFinite(state.candleStartedAt) && state.candleStartedAt > 0) state.candleStartedAt -= extra;
+  }
+
+  function paintClockAndChart(now=Date.now(), force=false){
+    if(force || now - lastClockPaintAt >= 80){
+      safeEngine('advanceDayCycle', ()=>advanceDayCycle(now));
+      safeEngine('updateMarketClock', ()=>updateMarketClock(now));
+      safeEngine('drawChart', ()=>drawChart());
+      lastClockPaintAt = now;
+    }
+  }
+
+  function marketEngineBeat(forcePaint=false){
+    const now = Date.now();
+    lastEngineBeatAt = now;
+
+    // 1) 절대 멈추면 안 되는 시간/시계부터 먼저 처리합니다.
+    safeEngine('applyAdminTimeScale', ()=>applyAdminTimeScale(now));
+    safeEngine('advanceDayCycle-first', ()=>advanceDayCycle(now));
+    paintClockAndChart(now, forcePaint);
+
+    // 2) 열기/댓글은 실패해도 시장 시간을 막지 않게 분리합니다.
+    safeEngine('updateTouchPressure', ()=>updateTouchPressure(now));
+    safeEngine('driveCommunityByVolume', ()=>driveCommunityByVolume(now));
+
+    // 3) 랜덤 주가 틱. 타이머가 밀려도 한 번에 너무 많이 몰리지 않게 제한합니다.
+    let ranMarketTick = false;
+    let safety = 0;
+    const maxTicks = forcePaint ? 10 : 6;
+    while(Date.now() >= nextMarketTickAt && safety < maxTicks){
+      safeEngine('marketStep', ()=>marketStep());
+      nextMarketTickAt = Date.now() + randomMarketDelay();
+      ranMarketTick = true;
+      safety++;
+    }
+    // 너무 오래 밀려 있으면 백로그를 버리고 현재 시간 기준으로 재시작합니다.
+    if(Date.now() - nextMarketTickAt > 3500){
+      nextMarketTickAt = Date.now() + randomMarketDelay();
+    }
+
+    // 4) 무거운 UI는 느리게. 실패해도 다음 틱은 계속 돕니다.
+    if(forcePaint || ranMarketTick || now - lastFullUiPaintAt >= 500){
+      safeEngine('updateHomeLivePost', ()=>updateHomeLivePost());
+      safeEngine('renderFactoryScreen', ()=>renderFactoryScreen());
+      safeEngine('syncAdminRemote', ()=>syncAdminRemote());
+      lastFullUiPaintAt = now;
+    }
+
+    // 5) 저장도 엔진 흐름과 분리합니다.
+    if(now - lastSaveBeatAt >= 3000){
+      safeEngine('save', ()=>save());
+      lastSaveBeatAt = now;
+      state.lastSave = now;
+    }
+  }
+
+  function startMarketWorkerHeartbeat(){
+    if(marketWorker) return;
+    try{
+      const workerCode = `
+        let timer = null;
+        function start(){
+          if(timer) clearInterval(timer);
+          timer = setInterval(()=>postMessage(Date.now()), 160);
+        }
+        self.onmessage = (e)=>{ if(e && e.data === 'start') start(); };
+        start();
+      `;
+      const blob = new Blob([workerCode], {type:'application/javascript'});
+      marketWorkerUrl = URL.createObjectURL(blob);
+      marketWorker = new Worker(marketWorkerUrl);
+      marketWorker.onmessage = ()=>{
+        lastWorkerBeatAt = Date.now();
+        marketEngineBeat(false);
+      };
+      marketWorker.onerror = (err)=>{
+        rememberEngineError('worker', err && err.message ? err.message : err);
+        try{ marketWorker.terminate(); }catch(e){}
+        marketWorker = null;
+        if(marketWorkerUrl){ try{ URL.revokeObjectURL(marketWorkerUrl); }catch(e){} }
+        marketWorkerUrl = null;
+      };
+      marketWorker.postMessage('start');
+    }catch(err){
+      rememberEngineError('worker unavailable', err);
+      marketWorker = null;
+    }
+  }
+
+  function kickMarketEngine(reason=''){
+    marketEngineBeat(true);
+    if(!marketWorker) startMarketWorkerHeartbeat();
+  }
+
+  function startMarketEngine(){
+    if(marketEngineStarted) return;
+    marketEngineStarted = true;
+
+    // 두 개의 독립 타이머 + RAF + Worker. 한쪽이 둔해져도 다른 쪽이 깨웁니다.
+    marketLoopTimer = setInterval(()=>marketEngineBeat(false), 120);
+    marketLoopTimer2 = setInterval(()=>marketEngineBeat(true), 900);
+    startMarketWorkerHeartbeat();
+
+    const rafLoop = ()=>{
+      const now = Date.now();
+      if(now - lastRafBeatAt >= 180){
+        marketEngineBeat(false);
+        lastRafBeatAt = now;
+      }
+      marketRafId = requestAnimationFrame(rafLoop);
+    };
+    marketRafId = requestAnimationFrame(rafLoop);
+
+    const pulse = $('enginePulse');
+    if(pulse){
+      pulse.addEventListener('animationiteration', ()=>marketEngineBeat(false), {passive:true});
+      pulse.addEventListener('animationstart', ()=>marketEngineBeat(true), {passive:true});
+    }
+
+    // 터치 순간에만 시간이 몰리는 것처럼 보이지 않게 입력 직전에 먼저 보정합니다.
+    ['pointerdown','touchstart','mousedown','keydown','pointermove','touchmove','click'].forEach(type=>{
+      window.addEventListener(type, ()=>kickMarketEngine(type), {passive:true});
+    });
+
+    // 디버그용. 크롬 콘솔에서 window.indiEngineStatus()를 보면 엔진 상태가 나옵니다.
+    window.indiEngineStatus = ()=>({
+      now:Date.now(),
+      lastEngineBeatAt,
+      sinceLastBeat:Date.now()-lastEngineBeatAt,
+      nextMarketTickIn:Math.round(nextMarketTickAt-Date.now()),
+      day:state.gameDay,
+      phase:marketPhase().label,
+      clock:$('marketClockText')?.textContent,
+      errors:engineErrors.slice()
+    });
+
+    marketEngineBeat(true);
+  }
+
+  function startCandleWatchdog(){
+    // 무한정 멈춤 방지용 최종 감시. 엔진이 1.5초 이상 쉬었다면 강제 기동합니다.
+    marketWatchdogTimer = setInterval(()=>{
+      const now = Date.now();
+      if(!marketWorker || (lastWorkerBeatAt && now - lastWorkerBeatAt > 3000)) startMarketWorkerHeartbeat();
+      if(now - lastEngineBeatAt > 1500) marketEngineBeat(true);
+      else paintClockAndChart(now, false);
+    }, 500);
+  }
+
+  window.addEventListener('resize', drawChart);
+  window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) save();
+    else {
+      applyOfflineProgress();
+      updateAll();
+      kickMarketEngine('visible');
+      if(offlineSummaryToShow) showFactoryNews(offlineSummaryToShow, 'good');
+    }
+  });
+  initCandles();
+  normalizeFactories();
+  applyOfflineProgress();
+  ensureCommunitySeed();
+  updateAll();
+  if(offlineSummaryToShow) showFactoryNews(offlineSummaryToShow, 'good');
+  startCandleWatchdog();
+  startMarketEngine();
+  setInterval(save, 3000);
+})();
+</script>
+</body>
+</html>
